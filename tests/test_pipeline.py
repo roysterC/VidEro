@@ -62,12 +62,13 @@ class GuardrailTests(unittest.TestCase):
 
 class ConfigFileTests(unittest.TestCase):
     def test_repo_files_load_and_pass_guardrails(self):
-        p = load_persona(ROOT / "personas/ava.yaml")
-        check_persona(p)
-        for f in sorted((ROOT / "shots").glob("*.yaml")):
-            for shot in load_shots(f):
-                with self.subTest(file=f.name, shot=shot.id):
-                    build_prompts(p, shot, use_lora=True)
+        for pf in sorted((ROOT / "personas").glob("*.yaml")):
+            p = load_persona(pf)
+            check_persona(p)
+            for f in sorted((ROOT / "shots").glob("*.yaml")):
+                for shot in load_shots(f):
+                    with self.subTest(persona=pf.name, file=f.name, shot=shot.id):
+                        build_prompts(p, shot, use_lora=True)
 
 
 class WorkflowTests(unittest.TestCase):
