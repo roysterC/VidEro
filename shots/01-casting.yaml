@@ -1,0 +1,18 @@
+# Step 1 - casting. Text-only headshots from the persona description.
+# Render ~40, pick ONE "hero face" and save it as the face reference for step 2.
+#   python -m pipeline.generate --persona personas/ava.yaml --shots shots/01-casting.yaml
+
+shots:
+  - id: headshot-studio
+    size: portrait
+    count: 20
+    prompt: >
+      head and shoulders portrait, facing camera, soft natural smile, plain light grey background,
+      soft studio lighting, plain white t-shirt
+
+  - id: headshot-window
+    size: portrait
+    count: 20
+    prompt: >
+      close-up portrait next to a window, natural daylight on face, relaxed neutral expression,
+      black tank top, blurred apartment background

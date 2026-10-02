@@ -1,0 +1,16 @@
+# Step 4 - consistency test for a trained LoRA. Fixed seeds, so re-running after
+# retraining (or with a different LoRA strength) gives a fair side-by-side comparison.
+#   python -m pipeline.generate --persona personas/ava.yaml --shots shots/03-consistency.yaml
+# Pass: the face is recognisably the same person in at least 8 of 10.
+
+shots:
+  - {id: c01-cafe, count: 1, seed: 1001, prompt: "sitting at a cafe window holding a latte, cream sweater, morning sun"}
+  - {id: c02-gym, count: 1, seed: 1002, prompt: "resting between sets on a gym bench, black athletic wear, gym lighting"}
+  - {id: c03-beach, count: 1, seed: 1003, size: tall, prompt: "full body walking on the beach at sunset, white linen shirt over swimsuit"}
+  - {id: c04-night, count: 1, seed: 1004, prompt: "close-up at a bar at night, neon reflections, red dress"}
+  - {id: c05-rain, count: 1, seed: 1005, prompt: "under a clear umbrella in the rain, trench coat, city street at dusk"}
+  - {id: c06-kitchen, count: 1, seed: 1006, prompt: "cooking in a bright kitchen, apron over t-shirt, laughing"}
+  - {id: c07-profile, count: 1, seed: 1007, prompt: "side profile looking out of an airplane window, headphones around neck"}
+  - {id: c08-car, count: 1, seed: 1008, prompt: "selfie in the driver's seat, sunglasses, denim jacket, daylight"}
+  - {id: c09-snow, count: 1, seed: 1009, prompt: "winter coat and beanie, snowy park, cheeks flushed from cold"}
+  - {id: c10-studio, count: 1, seed: 1010, prompt: "black and white studio portrait, high contrast lighting, black top"}

@@ -1,0 +1,33 @@
+# Render settings for pipeline.generate. Checkpoint filenames must match the files
+# in ComfyUI/models/checkpoints exactly (generate checks this before rendering).
+
+comfy_url: http://127.0.0.1:8188
+default_preset: fast
+
+presets:
+  # Lightning checkpoint: ~6 steps, roughly 10-20 s per image on an RTX 2070 Super.
+  # Use for casting, dataset building and drafting.
+  fast:
+    checkpoint: RealVisXL_V5.0_Lightning_fp16.safetensors
+    steps: 6
+    cfg: 1.5
+    sampler: dpmpp_sde
+    scheduler: karras
+
+  # Same checkpoint + a 1.5x hires pass for sharper skin/eyes on final posts.
+  # Roughly 45-90 s per image on 8 GB.
+  final:
+    checkpoint: RealVisXL_V5.0_Lightning_fp16.safetensors
+    steps: 6
+    cfg: 1.5
+    sampler: dpmpp_sde
+    scheduler: karras
+    hires: {scale: 1.5, denoise: 0.35, steps: 6}
+
+  # Full (non-Lightning) checkpoint: slower, slightly more varied output.
+  quality:
+    checkpoint: RealVisXL_V5.0_fp16.safetensors
+    steps: 30
+    cfg: 5.0
+    sampler: dpmpp_2m
+    scheduler: karras

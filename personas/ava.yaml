@@ -1,0 +1,34 @@
+# Persona bible: the single source of truth for one AI influencer.
+# Every render = trigger (once a LoRA exists) + identity + shot prompt + style.
+# Keep `identity` identical forever; change scenes in the shot lists instead.
+# Fully fictional. Never base a persona on a real person's face or name.
+
+slug: ava                 # folder/file name; lowercase, no spaces
+name: Ava Lane            # display name
+age: 26                   # must be 21+; the pipeline refuses to render otherwise
+
+# Rare made-up token + class word. Used as the LoRA trigger after training.
+trigger: avlx woman
+
+lora:
+  file:                   # e.g. ava_v1.safetensors once trained (lives in ComfyUI/models/loras)
+  strength: 0.85
+
+identity: >
+  26 year old woman, oval face, high cheekbones, hazel green eyes, light freckles across the nose,
+  long wavy chestnut brown hair with soft curtain bangs, small beauty mark above left lip,
+  fair warm skin, slim athletic build
+
+style: >
+  candid smartphone photo, natural light, realistic skin texture with pores, subtle film grain,
+  shallow depth of field, instagram aesthetic
+
+# Extra negatives for this persona (safety and quality negatives are added automatically).
+negative: >
+  heavy makeup, airbrushed, tattoos
+
+# Notes for writing shot lists and captions (not used by the scripts).
+personality: Warm, playful, a bit sarcastic. Morning coffee person, gym 4x a week, weekend trips.
+wardrobe: [oversized knits, linen sets, slip dresses, athleisure, denim, swimwear]
+locations: [sunlit apartment, cafe window seat, gym, beach boardwalk, rooftop at dusk, car passenger seat]
+pillars: [get ready with me, coffee and mornings, gym, travel, golden hour, after dark (teaser)]

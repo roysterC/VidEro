@@ -152,6 +152,8 @@ scripts/                    ← ffmpeg assembly, caption burn-in, export presets
 
 ## 6. Next steps
 
+> Phase 1 (static images on the home PC) is implemented. See [image-pipeline.md](image-pipeline.md).
+
 1. Connect the Eromify MCP (section 2) and record its real tool list.
 2. Write the first persona bible.
 3. Buy the smallest credit pack; run identity lock + 10-still consistency test.
