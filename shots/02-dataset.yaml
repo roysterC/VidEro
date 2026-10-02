@@ -1,0 +1,21 @@
+# Step 2 - LoRA dataset. Render with the face-reference template so every image has the hero face:
+#   python -m pipeline.generate --persona personas/ava.yaml --shots shots/02-dataset.yaml \
+#       --template workflows/faceref.json
+# ~45 images; keep the best 25-40. Variety (angle, framing, light, outfit, background) is
+# what makes the LoRA flexible; the face is what must stay the same.
+
+shots:
+  - {id: front-closeup, count: 4, prompt: "close-up portrait, facing camera, soft smile, white wall background, daylight"}
+  - {id: three-quarter, count: 4, prompt: "three-quarter view portrait, looking slightly away, cream knit sweater, cafe background"}
+  - {id: profile, count: 3, prompt: "side profile portrait, hair tucked behind ear, golden hour backlight, outdoors"}
+  - {id: laughing, count: 3, prompt: "laughing with eyes half closed, medium shot, denim jacket, city street"}
+  - {id: serious, count: 3, prompt: "serious expression, looking into camera, black turtleneck, dark studio background, dramatic side light"}
+  - {id: upper-body-gym, count: 4, size: portrait, prompt: "upper body, grey sports bra and black leggings, hair in ponytail, gym with mirrors"}
+  - {id: full-body-street, count: 4, size: tall, prompt: "full body, walking toward camera, white linen set, sneakers, sunny sidewalk"}
+  - {id: full-body-beach, count: 4, size: tall, prompt: "full body standing on boardwalk, blue sundress, ocean in background, midday sun"}
+  - {id: sitting-sofa, count: 3, prompt: "sitting cross-legged on a sofa holding a mug, oversized hoodie, cozy living room, lamp light"}
+  - {id: car-selfie, count: 3, prompt: "selfie angle from slightly above, passenger seat of a car, sunglasses on head, daylight"}
+  - {id: night-rooftop, count: 3, prompt: "medium shot on a rooftop at dusk, black slip dress, city lights bokeh"}
+  - {id: mirror, count: 3, size: tall, prompt: "mirror selfie holding phone, bedroom, matching beige loungewear, morning light"}
+  - {id: overhead-light, count: 3, prompt: "medium shot under overhead fluorescent light, grocery store aisle, olive green jacket"}
+  - {id: hair-up, count: 3, prompt: "close-up with hair in a messy bun, no makeup look, bathroom, soft daylight"}

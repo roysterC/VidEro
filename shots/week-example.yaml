@@ -1,0 +1,30 @@
+# Step 5 - production. One week of feed posts (4 candidates each, post the best one).
+# Copy this file per week (week-2026-10-05.yaml, ...).
+#   python -m pipeline.generate --persona personas/ava.yaml --shots shots/week-example.yaml --preset final
+# tier: public  -> safe for Instagram/TikTok (nudity is added to the negative prompt automatically)
+# tier: private -> only for the age-verified paid platform; never post to mainstream social
+
+shots:
+  - id: mon-coffee
+    tier: public
+    prompt: "sitting on a windowsill with a coffee mug, oversized white shirt, messy hair, morning sunlight"
+  - id: tue-gym
+    tier: public
+    prompt: "mirror selfie at the gym, matching sage green sports bra and leggings, ponytail, slight smirk"
+  - id: wed-grwm
+    tier: public
+    prompt: "sitting at a vanity putting on earrings, black satin slip dress, warm bedroom with fairy lights"
+  - id: thu-city
+    tier: public
+    size: tall
+    prompt: "full body crossing the street, beige trench coat, sunglasses, autumn city"
+  - id: fri-golden-hour
+    tier: public
+    prompt: "rooftop at golden hour, linen sundress, wind in hair, looking back over shoulder at camera"
+  - id: sat-beach
+    tier: public
+    size: tall
+    prompt: "walking on a beach boardwalk, white bikini under open linen shirt, straw hat, bright midday sun"
+  - id: sun-cozy
+    tier: public
+    prompt: "lying on a bed on her stomach reading a book, oversized knit sweater, rainy window, soft lamp light"

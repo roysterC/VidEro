@@ -1,0 +1,9 @@
+# Generated content stays local; never commit renders or model weights.
+output/
+datasets/
+exports/
+*.safetensors
+*.ckpt
+__pycache__/
+*.pyc
+.venv/
