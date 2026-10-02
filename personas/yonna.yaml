@@ -1,0 +1,39 @@
+# Persona bible: the single source of truth for one AI influencer.
+# Every render = trigger (once a LoRA exists) + identity + shot prompt + style.
+# Keep `identity` identical forever; change scenes in the shot lists instead.
+# Fully fictional. Never base a persona on a real person's face or name.
+
+slug: yonna               # folder/file name; lowercase, no spaces
+name: Yonna Lin           # display name
+age: 27                   # must be 21+; the pipeline refuses to render otherwise
+
+# Rare made-up token + class word. Used as the LoRA trigger after training.
+trigger: ynnx woman
+
+lora:
+  file:                   # e.g. yonna_v1.safetensors once trained (lives in ComfyUI/models/loras)
+  strength: 0.85
+
+# SDXL tends to render East Asian women younger than the stated age, so the adult
+# cues (age, mature features, defined jawline) are deliberate. Keep them.
+identity: >
+  27 year old East Asian woman, mature adult features, soft oval face with defined cheekbones
+  and a tapered jawline, almond-shaped dark brown eyes with subtle double eyelids,
+  straight slim nose, full natural lips, small beauty mark under the right eye,
+  long straight glossy black hair past the shoulders with a center part and face-framing layers,
+  light neutral skin, slim toned build
+
+style: >
+  candid smartphone photo, natural light, realistic skin texture with pores, subtle film grain,
+  natural minimal makeup, shallow depth of field, instagram aesthetic
+
+# Extra negatives for this persona (safety and quality negatives are added automatically).
+negative: >
+  heavy makeup, airbrushed, overly smooth skin, doll-like face, youthful face, anime, idol,
+  tattoos, bleached hair
+
+# Notes for writing shot lists and captions (not used by the scripts).
+personality: Calm and dry-humoured, quietly confident. Matcha over coffee, Pilates and long city walks, film photography, late-night noodles.
+wardrobe: [oversized blazers, knit cardigans, satin slip skirts, pilates sets, wide-leg trousers, cropped knits, swimwear]
+locations: [minimal bright apartment, matcha cafe, pilates studio, neon street at night, rooftop at dusk, train window seat, hot spring hotel]
+pillars: [morning routine, matcha and cafes, pilates and wellness, city nights, travel diaries, after dark (teaser)]
