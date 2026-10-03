@@ -3,11 +3,15 @@
 Target machine: Windows, RTX 2070 Super (8 GB VRAM), Ryzen 5 5600X, 16 GB RAM.
 
 ```
-1. Casting        text-only headshots → pick ONE hero face
-2. Dataset        hero face as reference → ~45 varied images → keep 25–40
-3. LoRA training  dataset → persona LoRA (the "identity lock")
-4. Consistency    10 fixed-seed test scenes → pass if 8/10 look like the same person
-5. Production     weekly shot list → pick best → export for each platform → post
+§2 Casting        text-only headshots → pick ONE hero face
+§3 Dataset        hero face as reference → ~45 varied images → keep 25–40
+§4 LoRA training  dataset → persona LoRA (the "identity lock")
+§5 Consistency    10 fixed-seed test scenes → pass if 8/10 look like the same person
+§6 Production     weekly shot list → pick best → export for each platform → post
+
+Why §3 + §4 exist: a text prompt alone invents a slightly different face on every
+render. The dataset (§3) shows the model one face in many situations; the LoRA (§4)
+makes it remember that face under a trigger word, so every post is the same person.
 ```
 
 Everything is driven by three kinds of files:
