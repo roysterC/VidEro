@@ -126,11 +126,11 @@ image reference through IPAdapter.
 
    | File | Checkpoint | Approx. time per image (2070 Super) |
    |---|---|---|
-   | `workflows\faceref.json` | Lightning, 6 + 6 steps | ~40–60 s |
-   | `workflows\faceref-quality.json` | full RealVisXL V5.0, 30 + 20 steps: more natural skin | ~2–3 min |
+   | `workflows\faceref.json` | Lightning, 6 steps | ~15–25 s |
+   | `workflows\faceref-quality.json` | full RealVisXL V5.0, 30 steps: more natural skin | ~45–90 s |
 
-   Both use IPAdapter only for the first 80% of pass 1. A second hires pass without IPAdapter
-   then redraws skin detail, which keeps the face but drops the airbrushed look. See *Realism* below.
+   Both apply IPAdapter only for the first 80% of the steps, so the final steps draw skin texture
+   freely. There's no hires pass, because training images are resized to 1024 px anyway. See *Realism* below.
    - Put your hero face in `ComfyUI\input\`.
    - Open `faceref.json` in a text editor and set two values:
      - `"image"` must be the hero face's filename (it is `hero_alisa.png` now).
@@ -291,12 +291,18 @@ dataset gives a plastic persona forever.
 | Symptom | Cause | Fix |
 |---|---|---|
 | Waxy, airbrushed skin | IPAdapter active on the final steps, which draw texture | `end_at` 0.8 and weight 0.65 on IPAdapter Advanced (already set in `faceref.json`) |
-| Mushy face in medium and full-body shots | Face too small at base resolution | Hires pass at 1.5×, denoise 0.4 (already set). For full body, also see FaceDetailer below |
-| Glossy pro-shoot or "AI art" look | Prompt words like *instagram aesthetic*, *bokeh*, *8k*, *masterpiece*, *studio* | Persona `style` now asks for a raw unedited iPhone photo (see `personas/*.yaml`) |
-| Everything too clean and perfect | No sensor noise or imperfections | `--grain 4` on export. Imperfections in `style` |
-| Still a little smooth even after these | Lightning checkpoint trades detail for speed | Use `faceref-quality.json` / `--preset quality` (full RealVisXL) |
+| **Crunchy textures: frayed or torn-paper fabric edges, gritty walls, blown highlights** | Over-correction: grit words in the prompt (*pores, imperfections, sensor noise, raw*) and/or a latent-space hires pass at low denoise | Keep `style` mild (the persona default). No latent upscaling. The `final` preset upscales in pixel space |
+| Mushy face in full-body shots | Face too small at base resolution | FaceDetailer (below). Or keep full-body shots out of the dataset and use more medium shots |
+| Still a little smooth | Lightning checkpoint trades detail for speed | `faceref-quality.json` / `--preset quality` (full RealVisXL) |
+| Too clean in final posts | No sensor noise | `--grain 3`–`4` on export. Posts only, not training images |
 | Over-saturated, high contrast | CFG too high for the checkpoint | Lightning: CFG 1.0–1.5. Full model: CFG 3.5–5 |
 | Face looks pasted on, wrong lighting on face | IPAdapter weight too high | Lower the weight to 0.5–0.6 |
+
+**Change one thing at a time** and compare on the same seed. `--seed` fixes it, so differences come
+from the setting and not from luck:
+```powershell
+python -m pipeline.generate --persona personas/alisa.yaml --shots shots/02-dataset.yaml --template workflows/faceref.json --only front-closeup three-quarter --count 2 --seed 1234
+```
 
 **Optional upgrades, in order of impact:**
 1. **FaceDetailer** (*ComfyUI-Impact-Pack* via Manager). It detects the face, re-renders it at

@@ -1,26 +1,53 @@
 {
   "1": {
     "class_type": "CheckpointLoaderSimple",
-    "_meta": {"title": "Load Checkpoint"},
-    "inputs": {"ckpt_name": "RealVisXL_V5.0_Lightning_fp16.safetensors"}
+    "_meta": {
+      "title": "Load Checkpoint"
+    },
+    "inputs": {
+      "ckpt_name": "RealVisXL_V5.0_Lightning_fp16.safetensors"
+    }
   },
   "2": {
     "class_type": "LoadImage",
-    "_meta": {"title": "Hero face (file in ComfyUI/input)"},
-    "inputs": {"image": "hero_alisa.png"}
+    "_meta": {
+      "title": "Hero face (file in ComfyUI/input)"
+    },
+    "inputs": {
+      "image": "hero_alisa.png"
+    }
   },
   "3": {
     "class_type": "IPAdapterUnifiedLoader",
-    "_meta": {"title": "IPAdapter Unified Loader"},
-    "inputs": {"model": ["1", 0], "preset": "PLUS FACE (portraits)"}
+    "_meta": {
+      "title": "IPAdapter Unified Loader"
+    },
+    "inputs": {
+      "model": [
+        "1",
+        0
+      ],
+      "preset": "PLUS FACE (portraits)"
+    }
   },
   "4": {
     "class_type": "IPAdapterAdvanced",
-    "_meta": {"title": "IPAdapter Advanced (stops at 80% so the last steps draw real skin texture)"},
+    "_meta": {
+      "title": "IPAdapter Advanced (stops at 80% so the last steps draw real skin texture)"
+    },
     "inputs": {
-      "model": ["3", 0],
-      "ipadapter": ["3", 1],
-      "image": ["2", 0],
+      "model": [
+        "3",
+        0
+      ],
+      "ipadapter": [
+        "3",
+        1
+      ],
+      "image": [
+        "2",
+        0
+      ],
       "weight": 0.65,
       "weight_type": "linear",
       "combine_embeds": "concat",
@@ -31,27 +58,63 @@
   },
   "5": {
     "class_type": "CLIPTextEncode",
-    "_meta": {"title": "Positive"},
-    "inputs": {"text": "%PROMPT%", "clip": ["1", 1]}
+    "_meta": {
+      "title": "Positive"
+    },
+    "inputs": {
+      "text": "%PROMPT%",
+      "clip": [
+        "1",
+        1
+      ]
+    }
   },
   "6": {
     "class_type": "CLIPTextEncode",
-    "_meta": {"title": "Negative"},
-    "inputs": {"text": "%NEGATIVE%", "clip": ["1", 1]}
+    "_meta": {
+      "title": "Negative"
+    },
+    "inputs": {
+      "text": "%NEGATIVE%",
+      "clip": [
+        "1",
+        1
+      ]
+    }
   },
   "7": {
     "class_type": "EmptyLatentImage",
-    "_meta": {"title": "Empty Latent Image"},
-    "inputs": {"width": 832, "height": 1216, "batch_size": 1}
+    "_meta": {
+      "title": "Empty Latent Image"
+    },
+    "inputs": {
+      "width": 832,
+      "height": 1216,
+      "batch_size": 1
+    }
   },
   "8": {
     "class_type": "KSampler",
-    "_meta": {"title": "Pass 1: composition + face (with IPAdapter)"},
+    "_meta": {
+      "title": "KSampler"
+    },
     "inputs": {
-      "model": ["4", 0],
-      "positive": ["5", 0],
-      "negative": ["6", 0],
-      "latent_image": ["7", 0],
+      "model": [
+        "4",
+        0
+      ],
+      "positive": [
+        "5",
+        0
+      ],
+      "negative": [
+        "6",
+        0
+      ],
+      "latent_image": [
+        "7",
+        0
+      ],
       "seed": 0,
       "steps": 6,
       "cfg": 1.5,
@@ -60,35 +123,33 @@
       "denoise": 1.0
     }
   },
-  "11": {
-    "class_type": "LatentUpscaleBy",
-    "_meta": {"title": "Upscale 1.5x"},
-    "inputs": {"samples": ["8", 0], "upscale_method": "nearest-exact", "scale_by": 1.5}
-  },
-  "12": {
-    "class_type": "KSampler",
-    "_meta": {"title": "Pass 2: hires skin detail (plain model, no IPAdapter smoothing)"},
-    "inputs": {
-      "model": ["1", 0],
-      "positive": ["5", 0],
-      "negative": ["6", 0],
-      "latent_image": ["11", 0],
-      "seed": 0,
-      "steps": 6,
-      "cfg": 1.5,
-      "sampler_name": "dpmpp_sde",
-      "scheduler": "karras",
-      "denoise": 0.4
-    }
-  },
   "9": {
     "class_type": "VAEDecode",
-    "_meta": {"title": "VAE Decode"},
-    "inputs": {"samples": ["12", 0], "vae": ["1", 2]}
+    "_meta": {
+      "title": "VAE Decode"
+    },
+    "inputs": {
+      "samples": [
+        "8",
+        0
+      ],
+      "vae": [
+        "1",
+        2
+      ]
+    }
   },
   "10": {
     "class_type": "SaveImage",
-    "_meta": {"title": "Save Image"},
-    "inputs": {"images": ["9", 0], "filename_prefix": "faceref"}
+    "_meta": {
+      "title": "Save Image"
+    },
+    "inputs": {
+      "images": [
+        "9",
+        0
+      ],
+      "filename_prefix": "faceref"
+    }
   }
 }

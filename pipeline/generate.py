@@ -28,7 +28,8 @@ LOG_FIELDS = [
 ]
 
 
-def plan_jobs(persona, shots, *, use_lora: bool, only: list[str] | None, count: int | None):
+def plan_jobs(persona, shots, *, use_lora: bool, only: list[str] | None, count: int | None,
+              base_seed: int | None = None):
     """Expand shots into individual renders. Raises GuardrailError before anything is queued."""
     jobs = []
     for shot in shots:
@@ -37,7 +38,8 @@ def plan_jobs(persona, shots, *, use_lora: bool, only: list[str] | None, count: 
         positive, negative = build_prompts(persona, shot, use_lora)
         n = count or shot.count
         for i in range(n):
-            seed = shot.seed + i if shot.seed is not None else random.randint(0, 2**48)
+            start = base_seed if base_seed is not None else shot.seed
+            seed = start + i if start is not None else random.randint(0, 2**48)
             jobs.append({"shot": shot, "seed": seed, "positive": positive, "negative": negative})
     if only and not jobs:
         raise SystemExit(f"no shots matched --only {only}")
@@ -67,6 +69,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--template", help="API-format ComfyUI workflow with %%PROMPT%%/%%NEGATIVE%% placeholders")
     ap.add_argument("--only", nargs="+", metavar="SHOT_ID", help="render only these shot ids")
     ap.add_argument("--count", type=int, help="override images per shot")
+    ap.add_argument("--seed", type=int,
+                    help="fixed starting seed for every shot, to compare settings on identical images")
     ap.add_argument("--no-lora", action="store_true", help="ignore the persona LoRA even if one is set")
     ap.add_argument("--out", default="output")
     ap.add_argument("--dry-run", action="store_true")
@@ -83,7 +87,8 @@ def main(argv: list[str] | None = None) -> int:
     template = load_template(args.template) if args.template else None
 
     try:
-        jobs = plan_jobs(persona, shots, use_lora=use_lora, only=args.only, count=args.count)
+        jobs = plan_jobs(persona, shots, use_lora=use_lora, only=args.only, count=args.count,
+                         base_seed=args.seed)
     except GuardrailError as e:
         print(f"refused: {e}", file=sys.stderr)
         return 2

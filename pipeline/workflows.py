@@ -55,25 +55,29 @@ def sdxl_graph(
             "sampler_name": preset.sampler, "scheduler": preset.scheduler, "denoise": 1.0,
         },
     }
-    last = ["sample", 0]
+    g["decode"] = {"class_type": "VAEDecode", "inputs": {"samples": ["sample", 0], "vae": ["ckpt", 2]}}
+    image = ["decode", 0]
 
     if preset.hires_scale:
+        # Upscale in pixel space, not latent space: latent nearest-exact upscaling at low
+        # denoise leaves crunchy, frayed textures (torn-paper fabric edges, gritty walls).
         g["upscale"] = {
-            "class_type": "LatentUpscaleBy",
-            "inputs": {"samples": last, "upscale_method": "nearest-exact", "scale_by": preset.hires_scale},
+            "class_type": "ImageScaleBy",
+            "inputs": {"image": image, "upscale_method": "lanczos", "scale_by": preset.hires_scale},
         }
+        g["encode"] = {"class_type": "VAEEncode", "inputs": {"pixels": ["upscale", 0], "vae": ["ckpt", 2]}}
         g["hires"] = {
             "class_type": "KSampler",
             "inputs": {
-                "model": model, "positive": ["pos", 0], "negative": ["neg", 0], "latent_image": ["upscale", 0],
+                "model": model, "positive": ["pos", 0], "negative": ["neg", 0], "latent_image": ["encode", 0],
                 "seed": seed, "steps": preset.hires_steps or preset.steps, "cfg": preset.cfg,
                 "sampler_name": preset.sampler, "scheduler": preset.scheduler, "denoise": preset.hires_denoise,
             },
         }
-        last = ["hires", 0]
+        g["hires_decode"] = {"class_type": "VAEDecode", "inputs": {"samples": ["hires", 0], "vae": ["ckpt", 2]}}
+        image = ["hires_decode", 0]
 
-    g["decode"] = {"class_type": "VAEDecode", "inputs": {"samples": last, "vae": ["ckpt", 2]}}
-    g["save"] = {"class_type": "SaveImage", "inputs": {"images": ["decode", 0], "filename_prefix": prefix}}
+    g["save"] = {"class_type": "SaveImage", "inputs": {"images": image, "filename_prefix": prefix}}
     return g
 
 

@@ -14,15 +14,16 @@ presets:
     sampler: dpmpp_sde
     scheduler: karras
 
-  # Same checkpoint + a 1.5x hires pass for sharper skin/eyes on final posts.
-  # Roughly 45-90 s per image on 8 GB.
+  # Same checkpoint + a 1.5x pixel-space upscale and light re-render for sharper
+  # eyes/hair on final posts. Not needed for LoRA datasets. Roughly 45-90 s per image on 8 GB.
+  # If textures look crunchy, lower denoise to 0.25; if soft, raise to 0.35.
   final:
     checkpoint: RealVisXL_V5.0_Lightning_fp16.safetensors
     steps: 6
     cfg: 1.5
     sampler: dpmpp_sde
     scheduler: karras
-    hires: {scale: 1.5, denoise: 0.35, steps: 6}
+    hires: {scale: 1.5, denoise: 0.3, steps: 6}
 
   # Full (non-Lightning) checkpoint: slower, slightly more varied output.
   quality:
