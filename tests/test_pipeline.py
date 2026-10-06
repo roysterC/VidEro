@@ -210,6 +210,23 @@ class EndToEndTests(unittest.TestCase):
             with Image.open(next((ex / "story").glob("*.jpg"))) as im:
                 self.assertEqual(im.size, (1080, 1920))
 
+    def test_missing_template_checkpoint_fails_before_queueing(self):
+        server = ThreadingHTTPServer(("127.0.0.1", 0), FakeComfy)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        self.addCleanup(server.server_close)
+        self.addCleanup(server.shutdown)
+        with tempfile.TemporaryDirectory() as tmp:
+            cfg = (ROOT / "config/render.yaml").read_text().replace(
+                "http://127.0.0.1:8188", f"http://127.0.0.1:{server.server_address[1]}")
+            (Path(tmp) / "render.yaml").write_text(cfg)
+            before = len(FakeComfy.queued)
+            rc = generate.main(["--persona", str(ROOT / "personas/ava.yaml"),
+                                "--shots", str(ROOT / "shots/02-dataset.yaml"),
+                                "--template", str(ROOT / "workflows/faceref-quality.json"),
+                                "--config", str(Path(tmp) / "render.yaml"), "--count", "1", "--out", tmp])
+            self.assertEqual(rc, 1)
+            self.assertEqual(len(FakeComfy.queued), before)
+
     def test_guardrail_refuses_before_queueing(self):
         with tempfile.TemporaryDirectory() as tmp:
             bad = Path(tmp) / "bad.yaml"

@@ -49,7 +49,7 @@ Put these in `ComfyUI\models\checkpoints\`:
 | File | Source | Use |
 |---|---|---|
 | `RealVisXL_V5.0_Lightning_fp16.safetensors` | Hugging Face `SG161222/RealVisXL_V5.0_Lightning` (or Civitai) | Default: photoreal, 6 steps, fast on 8 GB |
-| `RealVisXL_V5.0_fp16.safetensors` *(optional)* | Hugging Face `SG161222/RealVisXL_V5.0` | `quality` preset, 30 steps |
+| `RealVisXL_V5.0_fp16.safetensors` *(6.9 GB, needed for `quality` and `faceref-quality.json`)* | [direct download](https://huggingface.co/SG161222/RealVisXL_V5.0/resolve/main/RealVisXL_V5.0_fp16.safetensors) | More natural skin, 30 steps |
 
 You can use any SDXL photoreal checkpoint (Juggernaut XL, etc.). Put its exact filename in
 `config/render.yaml`. **Don't use Flux on this card.** It runs, but at 1.5–3 minutes per image.

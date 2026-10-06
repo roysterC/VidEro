@@ -44,6 +44,11 @@ def plan_jobs(persona, shots, *, use_lora: bool, only: list[str] | None, count: 
     return jobs
 
 
+def template_checkpoints(template: dict) -> list[str]:
+    return [n["inputs"]["ckpt_name"] for n in template.values()
+            if n.get("class_type") == "CheckpointLoaderSimple" and isinstance(n["inputs"].get("ckpt_name"), str)]
+
+
 def append_log(path: Path, row: dict) -> None:
     new = not path.exists()
     with open(path, "a", newline="", encoding="utf-8") as f:
@@ -84,8 +89,9 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     shot_set = Path(args.shots).stem
-    print(f"{len(jobs)} image(s) for {persona.name} from {shot_set} "
-          f"[preset={preset_name}, lora={'on' if use_lora else 'off'}, template={args.template or 'built-in SDXL'}]")
+    settings = (f"template={args.template}" if template
+                else f"preset={preset_name}, lora={'on' if use_lora else 'off'}")
+    print(f"{len(jobs)} image(s) for {persona.name} from {shot_set} [{settings}]")
 
     if args.dry_run:
         seen = set()
@@ -98,12 +104,17 @@ def main(argv: list[str] | None = None) -> int:
 
     client = ComfyClient(cfg.comfy_url)
     try:
+        wanted = template_checkpoints(template) if template else [preset.checkpoint]
+        ckpts = client.list_options("CheckpointLoaderSimple", "ckpt_name")
+        missing = [c for c in wanted if c not in ckpts]
+        if missing:
+            source = args.template or f"preset {preset_name!r} in {args.config}"
+            print(f"checkpoint {missing[0]!r} (from {source}) is not in ComfyUI/models/checkpoints.\n"
+                  f"Installed: {ckpts}\n"
+                  f"Download it into that folder, or use a workflow/preset that uses an installed one.",
+                  file=sys.stderr)
+            return 1
         if not template:
-            ckpts = client.list_options("CheckpointLoaderSimple", "ckpt_name")
-            if preset.checkpoint not in ckpts:
-                print(f"checkpoint {preset.checkpoint!r} not found in ComfyUI/models/checkpoints. "
-                      f"Installed: {ckpts}", file=sys.stderr)
-                return 1
             if use_lora:
                 loras = client.list_options("LoraLoader", "lora_name")
                 if persona.lora_file not in loras:
