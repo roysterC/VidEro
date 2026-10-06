@@ -12,7 +12,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageChops
 
 FORMATS = {
     "feed": (1080, 1350),    # Instagram / Facebook / Threads 4:5 portrait
@@ -39,6 +39,15 @@ def crop_to_aspect(img: Image.Image, width: int, height: int, anchor: float = 0.
     return img.crop(box).resize((width, height), Image.LANCZOS)
 
 
+def add_grain(img: Image.Image, amount: float) -> Image.Image:
+    """Add zero-mean monochrome noise, like a phone sensor. ``amount`` is the noise sigma
+    in 0-255 levels; 3-6 is subtle, above 10 looks like a filter."""
+    if amount <= 0:
+        return img
+    noise = Image.effect_noise(img.size, amount).convert("RGB")
+    return ImageChops.add(img, noise, scale=1.0, offset=-128)
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--src", required=True, help="folder of picked images")
@@ -46,6 +55,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--anchor", type=float, default=0.35, help="vertical crop anchor 0..1 (default 0.35)")
     ap.add_argument("--out", default="exports")
     ap.add_argument("--quality", type=int, default=92)
+    ap.add_argument("--grain", type=float, default=0,
+                    help="sensor-noise strength, 3-6 recommended for realism (default 0 = off)")
     args = ap.parse_args(argv)
 
     formats = list(FORMATS) if "all" in args.format else args.format
@@ -60,7 +71,7 @@ def main(argv: list[str] | None = None) -> int:
         dest.mkdir(parents=True, exist_ok=True)
         for path in files:
             with Image.open(path) as im:
-                out = crop_to_aspect(im.convert("RGB"), w, h, args.anchor)
+                out = add_grain(crop_to_aspect(im.convert("RGB"), w, h, args.anchor), args.grain)
             # A fresh RGB image saved without exif/pnginfo carries no metadata.
             out.save(dest / f"{path.stem}.jpg", "JPEG", quality=args.quality, optimize=True)
         print(f"{len(files)} image(s) -> {dest} ({w}x{h})")

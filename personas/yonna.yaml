@@ -23,13 +23,17 @@ identity: >
   long straight glossy black hair past the shoulders with a center part and face-framing layers,
   light neutral skin, slim toned build
 
+# Realism: phone-camera look, not a pro shoot. Avoid "instagram aesthetic", "bokeh",
+# "8k", "masterpiece" - they push toward the glossy AI look.
 style: >
-  candid smartphone photo, natural light, realistic skin texture with pores, subtle film grain,
-  natural minimal makeup, shallow depth of field, instagram aesthetic
+  raw unedited iPhone photo, candid and unposed, natural skin texture with visible pores,
+  fine facial hair and subtle skin imperfections, slight under-eye shadows, natural uneven lighting,
+  real-world surroundings, slight sensor noise, natural minimal makeup
 
 # Extra negatives for this persona (safety and quality negatives are added automatically).
 negative: >
-  heavy makeup, airbrushed, overly smooth skin, doll-like face, youthful face, anime, idol,
+  smooth skin, beauty filter, glossy skin, porcelain skin, oversaturated, hdr, bokeh,
+  perfect symmetry, heavy makeup, airbrushed, overly smooth skin, doll-like face, youthful face, anime, idol,
   tattoos, bleached hair
 
 # Notes for writing shot lists and captions (not used by the scripts).

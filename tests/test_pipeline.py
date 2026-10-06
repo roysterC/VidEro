@@ -157,6 +157,18 @@ class FakeComfy(BaseHTTPRequestHandler):
         self._send({"prompt_id": f"p{len(FakeComfy.queued)}", "number": 0, "node_errors": {}})
 
 
+class GrainTests(unittest.TestCase):
+    def test_grain_is_zero_mean_and_off_by_default(self):
+        from PIL import ImageStat
+        img = Image.new("RGB", (256, 256), (120, 120, 120))
+        self.assertIs(export.add_grain(img, 0), img)
+        noisy = export.add_grain(img, 5)
+        stat = ImageStat.Stat(noisy)
+        for mean, std in zip(stat.mean, stat.stddev):
+            self.assertAlmostEqual(mean, 120, delta=1.5)
+            self.assertGreater(std, 2)
+
+
 class EndToEndTests(unittest.TestCase):
     def test_generate_dataset_export(self):
         server = ThreadingHTTPServer(("127.0.0.1", 0), FakeComfy)
