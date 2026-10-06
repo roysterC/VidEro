@@ -13,7 +13,7 @@ from PIL import Image
 from pipeline import dataset, export, generate
 from pipeline.config import Persona, Preset, Shot, load_persona, load_shots
 from pipeline.prompts import GuardrailError, build_prompts, check_persona, check_prompt
-from pipeline.workflows import fill_template, sdxl_graph
+from pipeline.workflows import fill_template, load_template, sdxl_graph
 
 ROOT = Path(__file__).resolve().parent.parent
 
