@@ -13,7 +13,7 @@ from PIL import Image
 from pipeline import dataset, export, generate
 from pipeline.config import Persona, Preset, Shot, load_persona, load_shots
 from pipeline.prompts import GuardrailError, build_prompts, check_persona, check_prompt
-from pipeline.workflows import fill_template, sdxl_graph
+from pipeline.workflows import fill_template, load_template, sdxl_graph
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -84,6 +84,19 @@ class WorkflowTests(unittest.TestCase):
                         self.assertIn(v[0], g)
             self.assertEqual("hires" in g, p.hires_scale is not None)
             self.assertEqual("lora" in g, lora is not None)
+
+    def test_repo_templates_load_and_link(self):
+        for f in sorted((ROOT / "workflows").glob("*.json")):
+            with self.subTest(file=f.name):
+                g = fill_template(load_template(f), positive="P", negative="N", seed=7,
+                                  width=768, height=1344, prefix="x")
+                for node in g.values():
+                    for v in node["inputs"].values():
+                        if isinstance(v, list):
+                            self.assertIn(v[0], g)
+                texts = [n["inputs"]["text"] for n in g.values() if n["class_type"] == "CLIPTextEncode"]
+                self.assertEqual(sorted(texts), ["N", "P"])
+                self.assertIn(7, [n["inputs"].get("seed") for n in g.values()])
 
     def test_fill_template(self):
         t = {

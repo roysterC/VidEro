@@ -3,11 +3,15 @@
 Target machine: Windows, RTX 2070 Super (8 GB VRAM), Ryzen 5 5600X, 16 GB RAM.
 
 ```
-1. Casting        text-only headshots → pick ONE hero face
-2. Dataset        hero face as reference → ~45 varied images → keep 25–40
-3. LoRA training  dataset → persona LoRA (the "identity lock")
-4. Consistency    10 fixed-seed test scenes → pass if 8/10 look like the same person
-5. Production     weekly shot list → pick best → export for each platform → post
+§2 Casting        text-only headshots → pick ONE hero face
+§3 Dataset        hero face as reference → ~45 varied images → keep 25–40
+§4 LoRA training  dataset → persona LoRA (the "identity lock")
+§5 Consistency    10 fixed-seed test scenes → pass if 8/10 look like the same person
+§6 Production     weekly shot list → pick best → export for each platform → post
+
+Why §3 + §4 exist: a text prompt alone invents a slightly different face on every
+render. The dataset (§3) shows the model one face in many situations; the LoRA (§4)
+makes it remember that face under a trigger word, so every post is the same person.
 ```
 
 Everything is driven by three kinds of files:
@@ -118,12 +122,38 @@ image reference through IPAdapter.
 
    This preset needs no `insightface`, which is painful to install on Windows. If likeness is
    too weak, upgrade later to the FaceID presets.
-2. **Build the workflow once in the UI.** Start from the default SDXL workflow with your checkpoint and add:
-   - `Load Image` (hero face) → `IPAdapter Unified Loader` (preset *PLUS FACE (portraits)*)
-     → `IPAdapter Advanced` (weight ~0.75) → into the KSampler's `model`.
-   - In the positive prompt box type exactly `%PROMPT%`. In the negative prompt box type `%NEGATIVE%`.
-   - Click Run once by hand to check it works. Then **Workflow → Export (API)** and save it as
-     `workflows\faceref.json` in this repo.
+2. **The workflow is ready-made: `workflows\faceref.json`.** You don't have to build it.
+   - Put your hero face in `ComfyUI\input\`.
+   - Open `faceref.json` in a text editor and set two values:
+     - `"image"` must be the hero face's filename (it is `hero_alisa.png` now).
+     - `"ckpt_name"` must match your checkpoint filename exactly.
+   - Optional check in the UI: drag `faceref.json` onto the ComfyUI canvas to view it. To test it
+     there by hand, replace `%PROMPT%` with a real prompt first.
+
+   <details><summary>Building it by hand in the UI instead (10 nodes)</summary>
+
+   Double-click empty canvas to search for and add each node. Drag from an output dot to an input dot to wire them:
+
+   | From (output) | To (input) |
+   |---|---|
+   | Load Checkpoint `MODEL` | IPAdapter Unified Loader `model` |
+   | IPAdapter Unified Loader `model` | IPAdapter Advanced `model` |
+   | IPAdapter Unified Loader `ipadapter` | IPAdapter Advanced `ipadapter` |
+   | Load Image `IMAGE` | IPAdapter Advanced `image` |
+   | IPAdapter Advanced `MODEL` | KSampler `model` |
+   | Load Checkpoint `CLIP` | both CLIP Text Encode nodes' `clip` |
+   | CLIP Text Encode (`%PROMPT%`) | KSampler `positive` |
+   | CLIP Text Encode (`%NEGATIVE%`) | KSampler `negative` |
+   | Empty Latent Image (832×1216) | KSampler `latent_image` |
+   | KSampler `LATENT` | VAE Decode `samples` |
+   | Load Checkpoint `VAE` | VAE Decode `vae` |
+   | VAE Decode `IMAGE` | Save Image `images` |
+
+   KSampler settings for the Lightning checkpoint: steps **6**, cfg **1.5**, sampler **dpmpp_sde**,
+   scheduler **karras**. The defaults (20 / 8.0 / euler) give fried images.
+   Leave `image_negative`, `attn_mask` and `clip_vision` on IPAdapter Advanced unconnected;
+   the Unified Loader supplies CLIP vision. Then use **Workflow → Export (API)** to save as `workflows\faceref.json`.
+   </details>
 3. **Render the dataset.**
    ```powershell
    python -m pipeline.generate --persona personas/ava.yaml --shots shots/02-dataset.yaml --template workflows/faceref.json
