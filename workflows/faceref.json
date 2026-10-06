@@ -16,16 +16,16 @@
   },
   "4": {
     "class_type": "IPAdapterAdvanced",
-    "_meta": {"title": "IPAdapter Advanced"},
+    "_meta": {"title": "IPAdapter Advanced (stops at 80% so the last steps draw real skin texture)"},
     "inputs": {
       "model": ["3", 0],
       "ipadapter": ["3", 1],
       "image": ["2", 0],
-      "weight": 0.75,
+      "weight": 0.65,
       "weight_type": "linear",
       "combine_embeds": "concat",
       "start_at": 0.0,
-      "end_at": 1.0,
+      "end_at": 0.8,
       "embeds_scaling": "V only"
     }
   },
@@ -46,7 +46,7 @@
   },
   "8": {
     "class_type": "KSampler",
-    "_meta": {"title": "KSampler"},
+    "_meta": {"title": "Pass 1: composition + face (with IPAdapter)"},
     "inputs": {
       "model": ["4", 0],
       "positive": ["5", 0],
@@ -60,10 +60,31 @@
       "denoise": 1.0
     }
   },
+  "11": {
+    "class_type": "LatentUpscaleBy",
+    "_meta": {"title": "Upscale 1.5x"},
+    "inputs": {"samples": ["8", 0], "upscale_method": "nearest-exact", "scale_by": 1.5}
+  },
+  "12": {
+    "class_type": "KSampler",
+    "_meta": {"title": "Pass 2: hires skin detail (plain model, no IPAdapter smoothing)"},
+    "inputs": {
+      "model": ["1", 0],
+      "positive": ["5", 0],
+      "negative": ["6", 0],
+      "latent_image": ["11", 0],
+      "seed": 0,
+      "steps": 6,
+      "cfg": 1.5,
+      "sampler_name": "dpmpp_sde",
+      "scheduler": "karras",
+      "denoise": 0.4
+    }
+  },
   "9": {
     "class_type": "VAEDecode",
     "_meta": {"title": "VAE Decode"},
-    "inputs": {"samples": ["8", 0], "vae": ["1", 2]}
+    "inputs": {"samples": ["12", 0], "vae": ["1", 2]}
   },
   "10": {
     "class_type": "SaveImage",

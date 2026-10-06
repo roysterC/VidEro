@@ -122,7 +122,15 @@ image reference through IPAdapter.
 
    This preset needs no `insightface`, which is painful to install on Windows. If likeness is
    too weak, upgrade later to the FaceID presets.
-2. **The workflow is ready-made: `workflows\faceref.json`.** You don't have to build it.
+2. **The workflow is ready-made.** You don't have to build it. There are two versions:
+
+   | File | Checkpoint | Approx. time per image (2070 Super) |
+   |---|---|---|
+   | `workflows\faceref.json` | Lightning, 6 + 6 steps | ~40–60 s |
+   | `workflows\faceref-quality.json` | full RealVisXL V5.0, 30 + 20 steps: more natural skin | ~2–3 min |
+
+   Both use IPAdapter only for the first 80% of pass 1. A second hires pass without IPAdapter
+   then redraws skin detail, which keeps the face but drops the airbrushed look. See *Realism* below.
    - Put your hero face in `ComfyUI\input\`.
    - Open `faceref.json` in a text editor and set two values:
      - `"image"` must be the hero face's filename (it is `hero_alisa.png` now).
@@ -231,8 +239,9 @@ The seeds are fixed, so you can compare LoRA versions (`ava_v1`, `ava_v2`) or st
    Fix small defects with ComfyUI inpainting.
 5. Put the picks in a folder and export:
    ```powershell
-   python -m pipeline.export --src output/ava/week-2026-10-05/picked --format feed story
+   python -m pipeline.export --src output/ava/week-2026-10-05/picked --format feed story --grain 4
    ```
+   `--grain` adds subtle phone-sensor noise. Use it for posts only, never on LoRA training images.
    The output is JPEG with **all metadata stripped**. ComfyUI's PNGs contain your full prompts and
    workflow, so never upload the raw PNGs.
 
@@ -273,6 +282,30 @@ account, a Facebook app and a publicly hosted image URL.
 the scenes that won.
 
 ---
+
+## Realism: when images look "obviously AI"
+
+Fix realism **before** training. The LoRA learns whatever look the dataset has, so a plastic
+dataset gives a plastic persona forever.
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| Waxy, airbrushed skin | IPAdapter active on the final steps, which draw texture | `end_at` 0.8 and weight 0.65 on IPAdapter Advanced (already set in `faceref.json`) |
+| Mushy face in medium and full-body shots | Face too small at base resolution | Hires pass at 1.5×, denoise 0.4 (already set). For full body, also see FaceDetailer below |
+| Glossy pro-shoot or "AI art" look | Prompt words like *instagram aesthetic*, *bokeh*, *8k*, *masterpiece*, *studio* | Persona `style` now asks for a raw unedited iPhone photo (see `personas/*.yaml`) |
+| Everything too clean and perfect | No sensor noise or imperfections | `--grain 4` on export. Imperfections in `style` |
+| Still a little smooth even after these | Lightning checkpoint trades detail for speed | Use `faceref-quality.json` / `--preset quality` (full RealVisXL) |
+| Over-saturated, high contrast | CFG too high for the checkpoint | Lightning: CFG 1.0–1.5. Full model: CFG 3.5–5 |
+| Face looks pasted on, wrong lighting on face | IPAdapter weight too high | Lower the weight to 0.5–0.6 |
+
+**Optional upgrades, in order of impact:**
+1. **FaceDetailer** (*ComfyUI-Impact-Pack* via Manager). It detects the face, re-renders it at
+   high resolution and pastes it back. It's the biggest fix for full-body shots. Add it to the workflow
+   between VAE Decode and Save Image, then re-export `faceref.json`.
+2. **A realism LoRA** from Civitai (search "SDXL amateur photo" or "skin detail"). Load it at 0.3–0.6
+   with a `LoraLoader` right after the checkpoint.
+3. **Curate with a phone test.** View candidates on your phone at the size Instagram shows them.
+   That's how your audience will see them, and AI tells are easier to spot there.
 
 ## Troubleshooting
 
