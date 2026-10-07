@@ -5,6 +5,7 @@ persona's identity with a LoRA, and export posts for social media.
 
 - [docs/image-pipeline.md](docs/image-pipeline.md): **start here.** Setup on a home PC and the step-by-step workflow
 - [docs/content-plan.md](docs/content-plan.md): overall content and funnel plan (images now, video later)
+- [docs/guide/AI-Influencer-Guide.pdf](docs/guide/AI-Influencer-Guide.pdf): shareable step-by-step guide (PDF). Edit `ai-influencer-guide.html`, then rebuild with `python docs/guide/build.py`
 
 ```powershell
 pip install -r requirements.txt
