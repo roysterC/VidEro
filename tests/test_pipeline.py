@@ -195,6 +195,17 @@ class RenderConfigTests(unittest.TestCase):
         self.assertIn("hq", cfg.presets)
         self.assertIn("fast", cfg.presets)  # base presets kept
 
+    @mock.patch.dict(os.environ, {}, clear=True)
+    def test_local_file_with_bom_and_hidden_txt(self):
+        local = self.tmp / "render.local.yaml"
+        local.write_bytes(b"\xef\xbb\xbfcomfy_url: https://pod\n")  # UTF-8 BOM from a Windows editor
+        cfg = load_render_config(self.tmp / "render.yaml")
+        self.assertEqual(cfg.comfy_url, "https://pod")
+        self.assertEqual(cfg.comfy_url_source, str(local))
+        local.rename(self.tmp / "render.local.yaml.txt")  # Notepad's hidden extension
+        with self.assertRaisesRegex(ValueError, "rename it"):
+            load_render_config(self.tmp / "render.yaml")
+
     def test_env_var_wins(self):
         (self.tmp / "render.local.yaml").write_text("comfy_url: https://from-file\n")
         with mock.patch.dict(os.environ, {"COMFY_URL": "https://from-env"}):
