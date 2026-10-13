@@ -317,9 +317,20 @@ python -m pipeline.generate --persona personas/<slug>.yaml --shots shots/01-cast
   If you're running the scripts on your PC, upload it there through Jupyter's file browser instead.
 
 ### 2.3 Dataset
-1. In `workflows/faceref-quality.json`, set `"image": "hero_<slug>.png"` and confirm
-   `"ckpt_name": "RealVisXL_V5.0_fp16.safetensors"`. The workflow also uses FaceDetailer
-   (Impact Pack + Subpack), `bbox/face_yolov8m.pt` and the `4x_NMKD-Siax_200k.pth` upscaler from Part 1.
+1. Pick a workflow. Both have the same face-reference and eye fixes:
+   - **`workflows/faceref.json` (fast, recommended):** the `fast` preset's look (Lightning, one 6-step
+     pass) plus FaceDetailer. About 10 s per image on a 4090. Its output is 832×1216, which is plenty,
+     because `pipeline.dataset` resizes training images to 1024 px anyway.
+   - **`workflows/faceref-quality.json`:** the full model with an upscale and a second detail pass. About 30 s per image,
+     with a slightly smoother, more polished look.
+
+   Below, `faceref-quality.json` is described in detail. `faceref.json` is the same minus the upscale
+   and pass 2, using Lightning settings (6 steps, CFG 1.5, DPM++ SDE Karras) throughout.
+
+   In the workflow you use, set `"image": "hero_<slug>.png"` and confirm `"ckpt_name"` matches your file
+   (`RealVisXL_V5.0_Lightning_fp16.safetensors` in `faceref.json`, `RealVisXL_V5.0_fp16.safetensors` in
+   `faceref-quality.json`). Both use FaceDetailer (Impact Pack + Subpack) and `bbox/face_yolov8m.pt`;
+   the quality version also needs the `4x_NMKD-Siax_200k.pth` upscaler. All are installed in Part 1.
    What it does, and why:
 
    | Stage | Setting | Why |
@@ -336,7 +347,7 @@ python -m pipeline.generate --persona personas/<slug>.yaml --shots shots/01-cast
    faces and eyes, the opposite of what you want.
 2. Render:
    ```powershell
-   python -m pipeline.generate --persona personas/<slug>.yaml --shots shots/02-dataset.yaml --template workflows/faceref-quality.json
+   python -m pipeline.generate --persona personas/<slug>.yaml --shots shots/02-dataset.yaml --template workflows/faceref.json
    ```
 3. **Curate hard:** copy the 25–40 best images into `output/<slug>/picked/`.
    - **Keep:** clearly the same face; clean hands, eyes and teeth; real variety (about 40% close-ups,
@@ -711,6 +722,7 @@ available.
 | `shots/*.yaml` | Scenes only (Part 4.1 order) |
 | `config/render.yaml` | Shared render presets; optional `hq` preset |
 | `config/render.local.yaml` | **You create this** (git-ignored): `comfy_url` = your RunPod proxy URL |
-| `workflows/faceref-quality.json` | Dataset building (Part 2.3) |
+| `workflows/faceref.json` | Dataset building, fast (Part 2.3) |
+| `workflows/faceref-quality.json` | Dataset building, full model (Part 2.3) |
 | `workflows/locked-realism.json` | **You create this** in Part 3.2: LoRA + hires + FaceDetailer + upscale |
 | `output/<slug>/log.csv` | Every render's prompt, seed and job id. Keep it |

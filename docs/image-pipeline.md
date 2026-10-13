@@ -126,11 +126,15 @@ image reference through IPAdapter.
 
    | File | Checkpoint | Approx. time per image (2070 Super) |
    |---|---|---|
-   | `workflows\faceref.json` | Lightning, 6 + 6 steps | ~40–60 s |
+   | `workflows\faceref.json` | Lightning, one 6-step pass (the `fast` preset's settings) + FaceDetailer | ~20–30 s (~10 s on an RTX 4090) |
    | `workflows\faceref-quality.json` | full RealVisXL V5.0, model-card sampler settings, pixel-space upscale + FaceDetailer: natural skin, clean eyes. Needs Impact Pack/Subpack, `face_yolov8m.pt` and the `4x_NMKD-Siax_200k` upscaler | ~2–3 min (~30 s on an RTX 4090) |
 
-   Both use IPAdapter only for the first 80% of pass 1. A second hires pass without IPAdapter
-   then redraws skin detail, which keeps the face but drops the airbrushed look. See *Realism* below.
+   Both crop the hero from the top before IPAdapter, so the face (not the outfit) is what gets copied. Both
+   use IPAdapter at 0.6 for the first 80% of sampling only, which leaves the last steps free to draw skin
+   texture. Both finish with **FaceDetailer**, which re-renders the face at high resolution for clean eyes.
+   `faceref-quality.json` adds a pixel-space upscale and a second detail pass. See *Realism* below.
+   FaceDetailer needs *ComfyUI-Impact-Pack* + *Impact-Subpack* (Manager) and `face_yolov8m.pt` in
+   `models\ultralytics\bbox\`.
    - Put your hero face in `ComfyUI\input\`.
    - Open `faceref.json` in a text editor and set two values:
      - `"image"` must be the hero face's filename (it is `hero_alisa.png` now).
@@ -290,7 +294,7 @@ dataset gives a plastic persona forever.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| Waxy, airbrushed skin | IPAdapter active on the final steps, which draw texture | `end_at` 0.8 and weight 0.65 on IPAdapter Advanced (already set in `faceref.json`) |
+| Waxy, airbrushed skin | IPAdapter active on the final steps, which draw texture | `end_at` 0.8 and weight 0.6 on IPAdapter Advanced (already set in both faceref workflows) |
 | Mushy face in medium and full-body shots | Face too small at base resolution | Hires pass at 1.5×, denoise 0.4 (already set). For full body, also see FaceDetailer below |
 | Glossy pro-shoot or "AI art" look | Prompt words like *instagram aesthetic*, *bokeh*, *8k*, *masterpiece*, *studio* | Persona `style` now asks for a raw unedited iPhone photo (see `personas/*.yaml`) |
 | Everything too clean and perfect | No sensor noise or imperfections | `--grain 4` on export. Imperfections in `style` |
