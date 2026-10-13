@@ -57,10 +57,11 @@ class RenderConfig:
     comfy_url: str
     default_preset: str
     presets: dict[str, Preset] = field(default_factory=dict)
+    comfy_url_source: str = ""  # which file or env var set comfy_url, for messages
 
 
 def _read(path: str | Path) -> dict:
-    with open(path, encoding="utf-8") as f:
+    with open(path, encoding="utf-8-sig") as f:  # tolerate the BOM some Windows editors add
         data = yaml.safe_load(f) or {}
     if not isinstance(data, dict):
         raise ValueError(f"{path}: expected a mapping at the top level")
@@ -120,13 +121,21 @@ def load_render_config(path: str | Path) -> RenderConfig:
     """Read the render config, then apply overrides that never get committed:
     keys from <name>.local.yaml next to it (presets merge by name), then the COMFY_URL env var."""
     d = _read(path)
+    source = str(path)
     local = local_config_path(path)
+    hidden_txt = local.with_name(local.name + ".txt")
+    if not local.is_file() and hidden_txt.is_file():
+        raise ValueError(f"found {hidden_txt} - rename it to {local.name} "
+                         "(Windows hides the .txt extension that Notepad adds)")
     if local.is_file():
         override = _read(local)
         presets = {**(d.get("presets") or {}), **(override.pop("presets", None) or {})}
         d = {**d, **override, "presets": presets}
+        if "comfy_url" in override:
+            source = str(local)
     if os.environ.get("COMFY_URL"):
         d["comfy_url"] = os.environ["COMFY_URL"]
+        source = "COMFY_URL environment variable"
     presets = {}
     for name, p in (d.get("presets") or {}).items():
         hires = p.get("hires") or {}
@@ -143,4 +152,5 @@ def load_render_config(path: str | Path) -> RenderConfig:
     default = d.get("default_preset") or next(iter(presets), "")
     if default not in presets:
         raise ValueError(f"{path}: default_preset {default!r} is not defined under presets")
-    return RenderConfig(comfy_url=d.get("comfy_url", "http://127.0.0.1:8188"), default_preset=default, presets=presets)
+    return RenderConfig(comfy_url=d.get("comfy_url", "http://127.0.0.1:8188"), default_preset=default,
+                        presets=presets, comfy_url_source=source)

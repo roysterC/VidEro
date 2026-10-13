@@ -86,6 +86,7 @@ def main(argv: list[str] | None = None) -> int:
     shot_set = Path(args.shots).stem
     print(f"{len(jobs)} image(s) for {persona.name} from {shot_set} "
           f"[preset={preset_name}, lora={'on' if use_lora else 'off'}, template={args.template or 'built-in SDXL'}]")
+    print(f"ComfyUI: {cfg.comfy_url}  (from {cfg.comfy_url_source})")
 
     if args.dry_run:
         seen = set()
