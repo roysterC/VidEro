@@ -210,14 +210,26 @@ template there lists the exact files.
 Restart ComfyUI and check that the checkpoints appear in a *Load Checkpoint* node's dropdown.
 
 ### 1.6 Point this repo at the pod (on your PC)
-`pipeline/comfy.py` uses plain HTTP, so it works through RunPod's HTTPS proxy as-is. In
-`config/render.yaml`:
+Pull the latest version of the repo first (`git pull`). Older versions of `pipeline/comfy.py` are
+blocked by RunPod's proxy with `HTTP 403: error code: 1010`.
+
+**Don't put the pod URL in `config/render.yaml`.** This repo is public, and anyone with the URL can
+use your pod: run jobs on your GPU, read your files, and install custom nodes, which means running
+their own code. Use a local override instead. It's git-ignored, so it's never committed.
+
+Create `config/render.local.yaml` in your repo folder on your PC, containing one line:
 
 ```yaml
 comfy_url: https://<POD_ID>-8188.proxy.runpod.net
 ```
 
+The scripts read `config/render.yaml` first, then apply any keys from `render.local.yaml` on top.
+For a one-off, the `COMFY_URL` environment variable overrides both
+(PowerShell: `$env:COMFY_URL = "https://<POD_ID>-8188.proxy.runpod.net"`).
+
 The pod ID changes whenever you deploy a **new** pod. Stopping and starting the same pod keeps it.
+If a pod URL ever ends up somewhere public, terminate that pod and deploy a new one. The network
+volume keeps everything.
 
 Test:
 ```powershell
@@ -598,7 +610,7 @@ available.
 
 **Start**
 1. RunPod → your pod → **Start**. Open a Jupyter terminal, run `/workspace/start-comfy.sh`, and wait until ComfyUI opens in the browser.
-2. If you deployed a new pod, update `comfy_url` in `config/render.yaml`.
+2. If you deployed a new pod, update `comfy_url` in `config/render.local.yaml`.
 
 **Work**
 3. Stills: render drafts with `--count 4` → pick → re-render or finish the winners → QC → export.
@@ -618,7 +630,8 @@ available.
 
 | Problem | Fix |
 |---|---|
-| `cannot reach ComfyUI` from the scripts | Pod still starting, or the pod ID changed. Open the proxy URL in a browser; update `comfy_url` |
+| `cannot reach ComfyUI` from the scripts | Pod still starting, or the pod ID changed. Open the proxy URL in a browser; update `comfy_url` in `config/render.local.yaml` |
+| `HTTP 403: error code: 1010` | Old `pipeline/comfy.py`. Run `git pull`; the current version sends a User-Agent RunPod accepts |
 | Nodes, packages or models gone after a stop | They were outside `/workspace`. Follow 1.2–1.3 so ComfyUI and its venv live on the volume |
 | ComfyUI link shows "502" | ComfyUI isn't running. Run `/workspace/start-comfy.sh` and check `tail -f /workspace/comfy.log` |
 | `workflow rejected` with a missing node class | A custom node isn't installed on this pod (Part 1.4). Install it and restart ComfyUI |
@@ -638,7 +651,8 @@ available.
 |---|---|
 | `personas/<slug>.yaml` | Identity, trigger, locked LoRA file and strength |
 | `shots/*.yaml` | Scenes only (Part 4.1 order) |
-| `config/render.yaml` | `comfy_url` = the RunPod proxy URL; optional `hq` preset |
+| `config/render.yaml` | Shared render presets; optional `hq` preset |
+| `config/render.local.yaml` | **You create this** (git-ignored): `comfy_url` = your RunPod proxy URL |
 | `workflows/faceref-quality.json` | Dataset building (Part 2.3) |
 | `workflows/locked-realism.json` | **You create this** in Part 3.2: LoRA + hires + FaceDetailer + upscale |
 | `output/<slug>/log.csv` | Every render's prompt, seed and job id. Keep it |

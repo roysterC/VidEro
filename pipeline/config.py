@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -109,8 +110,23 @@ def load_shots(path: str | Path) -> list[Shot]:
     return shots
 
 
+def local_config_path(path: str | Path) -> Path:
+    """config/render.yaml -> config/render.local.yaml (git-ignored, machine-specific)."""
+    path = Path(path)
+    return path.with_name(f"{path.stem}.local{path.suffix}")
+
+
 def load_render_config(path: str | Path) -> RenderConfig:
+    """Read the render config, then apply overrides that never get committed:
+    keys from <name>.local.yaml next to it (presets merge by name), then the COMFY_URL env var."""
     d = _read(path)
+    local = local_config_path(path)
+    if local.is_file():
+        override = _read(local)
+        presets = {**(d.get("presets") or {}), **(override.pop("presets", None) or {})}
+        d = {**d, **override, "presets": presets}
+    if os.environ.get("COMFY_URL"):
+        d["comfy_url"] = os.environ["COMFY_URL"]
     presets = {}
     for name, p in (d.get("presets") or {}).items():
         hires = p.get("hires") or {}
