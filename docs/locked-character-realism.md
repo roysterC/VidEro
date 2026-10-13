@@ -47,31 +47,77 @@ Without one, everything disappears when you terminate a pod.
 3. **Datacenter:** pick one that lists **RTX 4090** *and* a 48 GB card (L40S or RTX A6000) as
    available. The volume can only attach to pods in the same datacenter.
 
-### 1.2 Deploy the ComfyUI pod
+### 1.2 Deploy a pod
 1. **Pods → Deploy**, and choose the datacenter of your volume.
 2. **GPU:**
    - **RTX 4090 (24 GB)** for stills, LoRA training and 480p–720p video tests.
    - **L40S / A6000 (48 GB)** or **H100** only when you render a lot of 720p video.
-3. **Template:** a maintained **ComfyUI** template (search "ComfyUI" in the template list). Prefer one that
-   includes **ComfyUI-Manager** and **JupyterLab**.
-4. **Attach the network volume** (it mounts at `/workspace`).
-5. Make sure **HTTP port 8188** (ComfyUI) and **8888** (Jupyter) are exposed.
+3. **Template:** the official **RunPod PyTorch** template (the newest 2.x version listed). It
+   gives you Python, CUDA, PyTorch and JupyterLab. ComfyUI itself goes on your volume in step 1.3.
+   *Why not a ComfyUI template?* Most install ComfyUI on the **container disk**, which is wiped every
+   time the pod stops. Custom nodes, their Python packages and anything in `models/` would vanish.
+4. **Attach the network volume.** It mounts at `/workspace`, the only folder that survives a stop.
+5. **Edit Template → Expose HTTP Ports:** `8888,8188` (Jupyter and ComfyUI).
 6. Deploy. When it's running, **Connect** shows the links:
-   - ComfyUI: `https://<POD_ID>-8188.proxy.runpod.net`
    - Jupyter: `https://<POD_ID>-8888.proxy.runpod.net`
+   - ComfyUI (after step 1.3): `https://<POD_ID>-8188.proxy.runpod.net`
 
-### 1.3 Find ComfyUI's folder
-Templates install ComfyUI in different places. Open a terminal in Jupyter and run:
+Always use **the same template and version** for this volume. The Python environment in step 1.3 is
+built against that image's Python and PyTorch.
+
+### 1.3 Install ComfyUI on the volume (once)
+Open Jupyter → **Terminal** and run this once. Everything goes under `/workspace`, so it all survives
+stops and new pods.
 
 ```bash
-find /workspace -maxdepth 3 -type d -name ComfyUI
-export COMFY=/workspace/ComfyUI        # ← use the path printed above
-ls $COMFY/models
+cd /workspace
+git clone https://github.com/comfyanonymous/ComfyUI
+cd ComfyUI
+
+# Python environment on the volume. --system-site-packages reuses the image's PyTorch + CUDA
+# (no 5 GB download), and every package you add later is stored on the volume.
+python -m venv --system-site-packages venv
+source venv/bin/activate
+pip install -r requirements.txt
+pip install -U "huggingface_hub[cli]"
+python -c "import torch; print(torch.__version__, 'CUDA OK' if torch.cuda.is_available() else 'NO CUDA')"
+
+# ComfyUI-Manager
+git clone https://github.com/ltdrdata/ComfyUI-Manager custom_nodes/comfyui-manager
+pip install -r custom_nodes/comfyui-manager/requirements.txt
+
+# Start script, used at the beginning of every session
+cat > /workspace/start-comfy.sh <<'SH'
+#!/bin/bash
+cd /workspace/ComfyUI
+source venv/bin/activate
+nohup python main.py --listen 0.0.0.0 --port 8188 > /workspace/comfy.log 2>&1 &
+echo "ComfyUI starting. Follow the log with: tail -f /workspace/comfy.log"
+SH
+chmod +x /workspace/start-comfy.sh
+/workspace/start-comfy.sh
 ```
 
-If ComfyUI is **not** under `/workspace`, it's on the pod's temporary disk. In that case, install a
-template that keeps ComfyUI on the volume, or move it there. Otherwise you'll re-download
-everything after every terminate.
+When the log shows `To see the GUI go to: http://0.0.0.0:8188`, open the ComfyUI link from **Connect**.
+
+**Every session from now on:** start the pod, open a Jupyter terminal, run `/workspace/start-comfy.sh`.
+For terminal commands in this guide, first run:
+
+```bash
+export COMFY=/workspace/ComfyUI
+source $COMFY/venv/bin/activate      # so pip, python and hf use ComfyUI's environment
+```
+
+> **Already installed into a ComfyUI template's container disk?** Rescue the downloads before you stop
+> that pod. Run the `git clone` line above, then move your models across, e.g.
+> `mv /path/to/old/ComfyUI/models/checkpoints/* /workspace/ComfyUI/models/checkpoints/`
+> (repeat for `loras`, `ipadapter`, `clip_vision`, `ultralytics`, `upscale_models`). Custom
+> nodes are quicker to reinstall than to move. Then stop that pod and continue with 1.2 on the
+> PyTorch template.
+>
+> If you ever switch to a different template or version, rebuild the environment:
+> `rm -rf /workspace/ComfyUI/venv`, then re-run the `venv` and `pip install` lines above plus
+> step 3 of 1.4's Option 2. Models and node folders are kept.
 
 ### 1.4 Install the custom nodes
 | Node pack (GitHub repo) | Search the Manager for | Used for |
@@ -90,10 +136,9 @@ not repo names, so search short words. If a pack shows as already installed, the
 **Option 2: the terminal (use this if the Manager can't find a pack).** In the Jupyter terminal:
 
 ```bash
-# 1. Find the Python that runs ComfyUI. Look for ".../python ... main.py" in the output
-ps aux | grep -v grep | grep main.py
-export PY=/path/to/that/python                         # ← the python path from that line
-export COMFY=/workspace/ComfyUI                        # ← from step 1.3
+# 1. ComfyUI's own Python (on the volume, from step 1.3)
+export COMFY=/workspace/ComfyUI
+export PY=$COMFY/venv/bin/python
 
 # 2. Clone the packs into custom_nodes
 cd $COMFY/custom_nodes
@@ -115,13 +160,15 @@ Skip any `git clone` that says the folder already exists. Then restart ComfyUI (
 Restart**, or stop and start the pod) and check that a few nodes appear: double-click the canvas and
 search for *FaceDetailer*, *IPAdapter Advanced*, *RIFE VFI* and *Video Combine*.
 
-Use `$PY -m pip`, not plain `pip`. RunPod templates usually run ComfyUI in its own virtual
-environment, and plain `pip` installs into a different Python that ComfyUI never sees. That causes
-"import failed" errors in the startup log.
+Use `$PY -m pip` (or activate the venv first), not the system `pip`. Plain `pip` installs into the
+container disk's Python: ComfyUI never sees it, and it's wiped at the next stop. That causes
+"import failed" errors in the startup log. The Manager already installs into the right place,
+because it uses the Python that runs ComfyUI.
 
 ### 1.5 Download the models
-Use the Jupyter terminal. `hf` is the Hugging Face CLI (`pip install -U "huggingface_hub[cli]"` if
-it's missing; older versions call it `huggingface-cli download`).
+Use the Jupyter terminal, with ComfyUI's environment active (`source /workspace/ComfyUI/venv/bin/activate`).
+`hf` is the Hugging Face CLI installed in step 1.3; older versions call it `huggingface-cli download`.
+All files land in `/workspace/ComfyUI/models`, on the volume.
 
 ```bash
 cd $COMFY/models
@@ -539,7 +586,7 @@ available.
 ## Part 7 — Session routine (keep the bill small)
 
 **Start**
-1. RunPod → your pod → **Start**. Wait until ComfyUI opens in the browser.
+1. RunPod → your pod → **Start**. Open a Jupyter terminal, run `/workspace/start-comfy.sh`, and wait until ComfyUI opens in the browser.
 2. If you deployed a new pod, update `comfy_url` in `config/render.yaml`.
 
 **Work**
@@ -561,6 +608,8 @@ available.
 | Problem | Fix |
 |---|---|
 | `cannot reach ComfyUI` from the scripts | Pod still starting, or the pod ID changed. Open the proxy URL in a browser; update `comfy_url` |
+| Nodes, packages or models gone after a stop | They were outside `/workspace`. Follow 1.2–1.3 so ComfyUI and its venv live on the volume |
+| ComfyUI link shows "502" | ComfyUI isn't running. Run `/workspace/start-comfy.sh` and check `tail -f /workspace/comfy.log` |
 | `workflow rejected` with a missing node class | A custom node isn't installed on this pod (Part 1.4). Install it and restart ComfyUI |
 | Checkpoint or LoRA not in the dropdown | Wrong folder, or ComfyUI not restarted. Check `ls $COMFY/models/loras` |
 | IPAdapter "ClipVision model not found" | The CLIP vision file must be named exactly `CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors` |
