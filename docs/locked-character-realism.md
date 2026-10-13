@@ -74,15 +74,50 @@ template that keeps ComfyUI on the volume, or move it there. Otherwise you'll re
 everything after every terminate.
 
 ### 1.4 Install the custom nodes
-In ComfyUI → **Manager → Custom Nodes Manager**, install, then **Restart**:
+| Node pack (GitHub repo) | Search the Manager for | Used for |
+|---|---|---|
+| `cubiq/ComfyUI_IPAdapter_plus` | `IPAdapter` | Face reference while building the dataset (Part 2) |
+| `ltdrdata/ComfyUI-Impact-Pack` | `Impact` | FaceDetailer (Part 3) |
+| `ltdrdata/ComfyUI-Impact-Subpack` | `Impact` | The face detector loader (Part 3) |
+| `ssitu/ComfyUI_UltimateSDUpscale` | `UltimateSDUpscale` (one word) | Tiled final upscale (Part 3, optional) |
+| `Fannovel16/ComfyUI-Frame-Interpolation` | `Frame Interpolation` | RIFE, to smooth video from 16 to 32 fps (Part 6) |
+| `Kosinkadink/ComfyUI-VideoHelperSuite` | `Video Helper` | Load and save video, extract frames (Part 6) |
 
-| Node pack | Used for |
-|---|---|
-| **ComfyUI_IPAdapter_plus** | Face reference while building the dataset (Part 2) |
-| **ComfyUI-Impact-Pack** + **ComfyUI-Impact-Subpack** | FaceDetailer, and the face detector loader (Part 3) |
-| **ComfyUI_UltimateSDUpscale** | Tiled final upscale (Part 3, optional) |
-| **ComfyUI-Frame-Interpolation** | RIFE, to smooth video from 16 to 32 fps (Part 6) |
-| **ComfyUI-VideoHelperSuite** | Load and save video, extract frames (Part 6) |
+**Option 1: the Manager.** In ComfyUI → **Manager → Custom Nodes Manager**, set the filter to **All**,
+search for each term above, click **Install**, then **Restart**. The Manager searches display names,
+not repo names, so search short words. If a pack shows as already installed, the template included it.
+
+**Option 2: the terminal (use this if the Manager can't find a pack).** In the Jupyter terminal:
+
+```bash
+# 1. Find the Python that runs ComfyUI. Look for ".../python ... main.py" in the output
+ps aux | grep -v grep | grep main.py
+export PY=/path/to/that/python                         # ← the python path from that line
+export COMFY=/workspace/ComfyUI                        # ← from step 1.3
+
+# 2. Clone the packs into custom_nodes
+cd $COMFY/custom_nodes
+git clone https://github.com/cubiq/ComfyUI_IPAdapter_plus
+git clone https://github.com/ltdrdata/ComfyUI-Impact-Pack
+git clone https://github.com/ltdrdata/ComfyUI-Impact-Subpack
+git clone --recursive https://github.com/ssitu/ComfyUI_UltimateSDUpscale
+git clone https://github.com/Fannovel16/ComfyUI-Frame-Interpolation
+git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
+
+# 3. Install their Python dependencies into ComfyUI's own Python
+$PY -m pip install -r ComfyUI-Impact-Pack/requirements.txt
+$PY -m pip install -r ComfyUI-Impact-Subpack/requirements.txt
+$PY -m pip install -r ComfyUI-VideoHelperSuite/requirements.txt
+(cd ComfyUI-Frame-Interpolation && $PY install.py)
+```
+
+Skip any `git clone` that says the folder already exists. Then restart ComfyUI (**Manager →
+Restart**, or stop and start the pod) and check that a few nodes appear: double-click the canvas and
+search for *FaceDetailer*, *IPAdapter Advanced*, *RIFE VFI* and *Video Combine*.
+
+Use `$PY -m pip`, not plain `pip`. RunPod templates usually run ComfyUI in its own virtual
+environment, and plain `pip` installs into a different Python that ComfyUI never sees. That causes
+"import failed" errors in the startup log.
 
 ### 1.5 Download the models
 Use the Jupyter terminal. `hf` is the Hugging Face CLI (`pip install -U "huggingface_hub[cli]"` if
