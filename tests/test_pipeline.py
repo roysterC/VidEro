@@ -1,6 +1,7 @@
 import csv
 import io
 import json
+import re
 import tempfile
 import threading
 import unittest
@@ -123,6 +124,7 @@ def png_bytes(size=(832, 1216)):
 
 class FakeComfy(BaseHTTPRequestHandler):
     queued = []
+    user_agents = set()
 
     def log_message(self, *a):
         pass
@@ -136,6 +138,7 @@ class FakeComfy(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_GET(self):
+        FakeComfy.user_agents.add(self.headers.get("User-Agent", ""))
         url = urlparse(self.path)
         if url.path == "/object_info/CheckpointLoaderSimple":
             self._send({"CheckpointLoaderSimple": {"input": {"required": {
@@ -177,8 +180,8 @@ class EndToEndTests(unittest.TestCase):
         self.addCleanup(server.shutdown)
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
-            cfg = (ROOT / "config/render.yaml").read_text().replace(
-                "http://127.0.0.1:8188", f"http://127.0.0.1:{server.server_address[1]}")
+            cfg = re.sub(r"(?m)^comfy_url:.*$", f"comfy_url: http://127.0.0.1:{server.server_address[1]}",
+                         (ROOT / "config/render.yaml").read_text())
             (tmp / "render.yaml").write_text(cfg)
             out = tmp / "output"
             rc = generate.main(["--persona", str(ROOT / "personas/ava.yaml"),
@@ -188,6 +191,9 @@ class EndToEndTests(unittest.TestCase):
             pngs = sorted((out / "ava/01-casting").glob("*.png"))
             self.assertEqual(len(pngs), 4)
             self.assertEqual(len(FakeComfy.queued), 4)
+            # RunPod's proxy blocks urllib's default "Python-urllib/x.y" User-Agent.
+            self.assertTrue(FakeComfy.user_agents)
+            self.assertFalse(any(ua.startswith("Python-urllib") for ua in FakeComfy.user_agents))
             with open(out / "ava/log.csv", newline="") as f:
                 rows = list(csv.DictReader(f))
             self.assertEqual(len(rows), 4)
