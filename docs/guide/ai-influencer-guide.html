@@ -1,0 +1,1142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Building an AI Influencer</title>
+<style>
+  :root {
+    --ink: #17152e;
+    --body: #2c2a45;
+    --muted: #6a6785;
+    --line: #e5e2f0;
+    --tint: #f6f4fc;
+    --tint2: #fbfaff;
+    --accent: #6a46ff;
+    --accent-2: #ff5a87;
+    --accent-soft: #ece7ff;
+    --mint: #12a37c;
+    --mint-soft: #e3f6ef;
+    --amber: #c98200;
+    --amber-soft: #fdf3dc;
+    --red: #d93d4a;
+    --red-soft: #fde8ea;
+    --grad: linear-gradient(120deg, #6a46ff 0%, #b04dff 50%, #ff5a87 100%);
+  }
+
+  @page {
+    size: A4;
+    margin: 16mm 17mm 18mm 17mm;
+    @bottom-left {
+      content: "Building an AI Influencer";
+      font-family: "Inter", sans-serif;
+      font-size: 7.5pt;
+      color: #9a97b2;
+      letter-spacing: 0.04em;
+    }
+    @bottom-right {
+      content: counter(page);
+      font-family: "Inter", sans-serif;
+      font-size: 7.5pt;
+      font-weight: 600;
+      color: #6a46ff;
+    }
+  }
+  @page cover {
+    margin: 0;
+    @bottom-left { content: none; }
+    @bottom-right { content: none; }
+  }
+  @page divider {
+    margin: 0;
+    @bottom-left { content: none; }
+    @bottom-right { content: none; }
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    margin: 0;
+    background: #fff;
+    color: var(--body);
+    font-family: "Inter", sans-serif;
+    font-size: 9.3pt;
+    line-height: 1.55;
+    font-feature-settings: "cv11", "ss01";
+  }
+  h1, h2, h3, h4 { font-family: "Inter Display", "Inter", sans-serif; color: var(--ink); margin: 0; }
+  h2 { font-size: 21pt; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
+  h3 { font-size: 12pt; font-weight: 650; letter-spacing: -0.01em; margin: 15px 0 5px; break-after: avoid; }
+  h4 { font-size: 10pt; font-weight: 650; margin: 0 0 4px; }
+  p { margin: 0 0 8px; }
+  strong { color: var(--ink); font-weight: 650; }
+  ul, ol { margin: 0 0 8px; padding-left: 18px; }
+  li { margin: 2px 0; }
+  li::marker { color: var(--accent); font-weight: 600; }
+  code, .mono { font-family: "DejaVu Sans Mono", monospace; font-size: 8.2pt; }
+  code { background: var(--tint); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; color: #4a2fd6; }
+  a { color: var(--accent); text-decoration: none; }
+
+  .page-break { break-before: page; }
+  .avoid { break-inside: avoid; }
+
+  /* ---------- Cover ---------- */
+  .cover {
+    page: cover;
+    position: relative;
+    width: 210mm; height: 297mm;
+    overflow: hidden;
+    background: #100e24;
+    color: #fff;
+  }
+  .cover .orb {
+    position: absolute; border-radius: 50%;
+  }
+  .cover .orb.a { width: 150mm; height: 150mm; right: -40mm; top: 30mm;
+    background: radial-gradient(circle at 34% 30%, #ff8fb0 0%, #c056ff 32%, #6a3cf0 62%, #2c1a86 100%); }
+  .cover .orb.b { width: 90mm; height: 90mm; left: -30mm; top: 150mm;
+    background: radial-gradient(circle, rgba(106,70,255,.55) 0%, rgba(16,14,36,0) 70%); }
+  .glow { position: absolute; border-radius: 50%; background: radial-gradient(circle, rgba(150,70,255,.42) 0%, rgba(150,70,255,.12) 45%, rgba(150,70,255,0) 70%); }
+  .cover .glow { width: 230mm; height: 230mm; right: -80mm; top: -10mm; }
+  .back .glow { width: 190mm; height: 190mm; left: 10mm; top: 15mm; }
+  .cover .ring { position: absolute; border-radius: 50%; border: 1px solid rgba(255,255,255,.14); }
+  .cover .ring.r1 { width: 190mm; height: 190mm; right: -60mm; top: 10mm; }
+  .cover .ring.r2 { width: 230mm; height: 230mm; right: -80mm; top: -10mm; border-color: rgba(255,255,255,.07); }
+  .cover .grid {
+    position: absolute; inset: 0;
+    background-image: linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size: 12mm 12mm;
+  }
+  .cover .top { position: absolute; left: 20mm; top: 20mm; right: 20mm; display: flex; justify-content: space-between; align-items: center; }
+  .brand { font-family: "Inter Display"; font-weight: 800; font-size: 13pt; letter-spacing: 0.02em; }
+  .brand span { color: #c39bff; }
+  .cover .edition { font-size: 8pt; letter-spacing: .18em; text-transform: uppercase; color: rgba(255,255,255,.6); }
+  .cover .main { position: absolute; left: 20mm; right: 20mm; bottom: 46mm; }
+  .cover .kicker { display: inline-block; font-size: 8pt; font-weight: 600; letter-spacing: .2em; text-transform: uppercase;
+    padding: 5px 11px; border: 1px solid rgba(255,255,255,.3); border-radius: 99px; color: rgba(255,255,255,.85); margin-bottom: 9mm; }
+  .cover h1 { color: #fff; font-size: 50pt; font-weight: 800; line-height: .98; letter-spacing: -0.035em; }
+  .cover h1 .g { color: #c79bff; }
+  .cover .sub { margin-top: 8mm; font-size: 12.5pt; line-height: 1.5; max-width: 125mm; color: rgba(255,255,255,.78); }
+  .cover .foot { position: absolute; left: 20mm; right: 20mm; bottom: 18mm; display: flex; gap: 10mm;
+    border-top: 1px solid rgba(255,255,255,.15); padding-top: 6mm; font-size: 8pt; color: rgba(255,255,255,.6); }
+  .cover .foot b { display: block; color: #fff; font-size: 9pt; font-weight: 600; margin-bottom: 1px; }
+
+  /* ---------- Part dividers ---------- */
+  .divider {
+    page: divider;
+    break-before: page;
+    position: relative;
+    width: 210mm; height: 297mm; overflow: hidden;
+    background: #100e24; color: #fff;
+  }
+  .divider .num {
+    position: absolute; right: 14mm; top: 4mm;
+    font-family: "Inter Display"; font-weight: 800; font-size: 210pt; line-height: 1; letter-spacing: -0.06em;
+    color: rgba(176,77,255,.22);
+  }
+  .divider .content { position: absolute; left: 20mm; right: 20mm; bottom: 34mm; }
+  .divider .label { font-size: 8.5pt; letter-spacing: .22em; text-transform: uppercase; color: #c9b9ff; font-weight: 600; margin-bottom: 5mm; }
+  .divider h2 { color: #fff; font-size: 38pt; font-weight: 800; letter-spacing: -0.03em; line-height: 1.02; }
+  .divider p { margin-top: 6mm; color: rgba(255,255,255,.72); font-size: 11.5pt; max-width: 130mm; line-height: 1.55; }
+  .divider ul { list-style: none; padding: 0; margin-top: 10mm; border-top: 1px solid rgba(255,255,255,.15); }
+  .divider li { display: flex; justify-content: space-between; padding: 3.2mm 0; border-bottom: 1px solid rgba(255,255,255,.1); font-size: 10.5pt; color: rgba(255,255,255,.9); }
+  .divider li span { color: rgba(255,255,255,.45); font-size: 9pt; }
+  .divider .bar { position: absolute; left: 0; top: 0; bottom: 0; width: 5mm; background: var(--grad); }
+
+  /* ---------- Section openers ---------- */
+  .section { break-before: page; }
+  .section.flow { break-before: auto; margin-top: 26px; }
+  .eyebrow { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .eyebrow .step { font-size: 7.5pt; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+  .eyebrow .rule { flex: 1; height: 1px; background: var(--line); }
+  .eyebrow .tag { font-size: 7.3pt; font-weight: 600; color: var(--muted); background: var(--tint); border: 1px solid var(--line); border-radius: 99px; padding: 2px 9px; }
+  .lead { font-size: 10.5pt; line-height: 1.5; color: #4a4766; margin: 7px 0 12px; max-width: 160mm; }
+
+  .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--line); border-radius: 10px; margin: 0 0 12px; overflow: hidden; background: var(--tint2); }
+  .meta div { padding: 9px 12px; border-right: 1px solid var(--line); }
+  .meta div:last-child { border-right: 0; }
+  .meta small { display: block; font-size: 6.8pt; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin-bottom: 1px; }
+  .meta b { font-size: 9pt; color: var(--ink); font-weight: 600; }
+
+  /* ---------- Cards & grids ---------- */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0 12px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0 12px; }
+  .card { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: #fff; break-inside: avoid; }
+  .card.tinted { background: var(--tint); border-color: transparent; }
+  .card p:last-child, .card ul:last-child { margin-bottom: 0; }
+  .card .icon { width: 26px; height: 26px; border-radius: 7px; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 10pt; margin-bottom: 7px; }
+  .card .icon svg { width: 15px; height: 15px; }
+
+  /* ---------- Callouts ---------- */
+  .callout { border-radius: 10px; padding: 11px 14px 11px 14px; margin: 12px 0; break-inside: avoid; border-left: 3px solid; }
+  .callout .t { font-size: 7.4pt; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 3px; }
+  .callout p:last-child, .callout ul:last-child { margin-bottom: 0; }
+  .callout.tip { background: var(--accent-soft); border-color: var(--accent); }
+  .callout.tip .t { color: var(--accent); }
+  .callout.warn { background: var(--amber-soft); border-color: var(--amber); }
+  .callout.warn .t { color: var(--amber); }
+  .callout.stop { background: var(--red-soft); border-color: var(--red); }
+  .callout.stop .t { color: var(--red); }
+  .callout.ok { background: var(--mint-soft); border-color: var(--mint); }
+  .callout.ok .t { color: var(--mint); }
+
+  /* ---------- Tables ---------- */
+  table { width: 100%; border-collapse: separate; border-spacing: 0; margin: 8px 0 14px; font-size: 8.7pt; break-inside: avoid; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  th { text-align: left; font-size: 7pt; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 650; background: var(--tint); padding: 7px 10px; border-bottom: 1px solid var(--line); }
+  td { padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; line-height: 1.45; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { font-weight: 600; color: var(--ink); }
+  table.plain td:first-child { font-weight: 400; color: var(--body); }
+
+  /* ---------- Checklists ---------- */
+  .checklist { list-style: none; padding: 0; margin: 4px 0 10px; }
+  .checklist li { position: relative; padding-left: 22px; margin: 5px 0; }
+  .checklist li::before { content: ""; position: absolute; left: 0; top: 2px; width: 12px; height: 12px; border: 1.5px solid var(--accent); border-radius: 3.5px; }
+  .x-list { list-style: none; padding: 0; margin: 4px 0 0; }
+  .x-list li { position: relative; padding-left: 20px; margin: 4px 0; }
+  .x-list li::before { content: "✕"; position: absolute; left: 1px; top: 0; color: var(--red); font-weight: 700; font-size: 8.5pt; }
+  .v-list { list-style: none; padding: 0; margin: 4px 0 0; }
+  .v-list li { position: relative; padding-left: 20px; margin: 4px 0; }
+  .v-list li::before { content: "✓"; position: absolute; left: 1px; top: 0; color: var(--mint); font-weight: 700; font-size: 9pt; }
+
+  /* ---------- Numbered steps ---------- */
+  .steps { counter-reset: s; list-style: none; padding: 0; margin: 6px 0 12px; }
+  .steps > li { counter-increment: s; position: relative; padding: 0 0 0 34px; margin: 0 0 10px; break-inside: avoid; }
+  .steps > li::before { content: counter(s); position: absolute; left: 0; top: -1px; width: 22px; height: 22px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 8pt; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .steps > li > b:first-child { display: block; color: var(--ink); font-weight: 650; }
+
+  /* ---------- Prompt blocks ---------- */
+  .prompt { background: #15132b; color: #e9e6ff; border-radius: 10px; padding: 12px 14px; margin: 8px 0 12px; font-family: "DejaVu Sans Mono", monospace; font-size: 8.1pt; line-height: 1.6; break-inside: avoid; }
+  .prompt .lbl { display: block; font-family: "Inter"; font-size: 6.8pt; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: #9f8cff; margin-bottom: 5px; }
+  .prompt .neg { color: #ff9cb7; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 6px; align-items: center; }
+  .chip { font-size: 8pt; font-weight: 600; padding: 4px 10px; border-radius: 99px; border: 1px solid; }
+  .chip.c1 { color: #5a35f5; border-color: #cfc3ff; background: #f1edff; }
+  .chip.c2 { color: #b0329c; border-color: #f1c2ea; background: #fdf0fb; }
+  .chip.c3 { color: #d93d6a; border-color: #ffc6d6; background: #fff0f4; }
+  .chip.c4 { color: #c06b00; border-color: #fbd9a6; background: #fff7ea; }
+  .chip.c5 { color: #0d8a69; border-color: #b4e6d6; background: #ebf9f4; }
+  .chip.c6 { color: #1f6fd1; border-color: #bcd6f6; background: #edf4fd; }
+  .chips .plus { color: #b5b2c9; font-weight: 700; }
+
+  /* ---------- Pipeline diagram ---------- */
+  .pipe { border: 1px solid var(--line); border-radius: 14px; padding: 16px 16px 14px; margin: 12px 0 16px; background: var(--tint2); break-inside: avoid; }
+  .pipe .ph { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .pipe .ph h4 { font-size: 9.5pt; }
+  .pipe .ph span { font-size: 7.4pt; color: var(--muted); font-weight: 600; letter-spacing: .1em; text-transform: uppercase; }
+  .flow-row { display: flex; align-items: stretch; gap: 0; }
+  .node { flex: 1; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 9px 9px 8px; position: relative; }
+  .node .n { font-size: 6.8pt; font-weight: 700; color: var(--accent); letter-spacing: .1em; }
+  .node b { display: block; font-size: 8.8pt; color: var(--ink); margin: 1px 0 2px; font-family: "Inter Display"; font-weight: 650; }
+  .node small { display: block; font-size: 7.2pt; color: var(--muted); line-height: 1.35; }
+  .node.hl { background: var(--ink); border-color: var(--ink); }
+  .node.hl b { color: #fff; } .node.hl small { color: #b9b5d6; } .node.hl .n { color: #b9a6ff; }
+  .arrow { width: 16px; display: flex; align-items: center; justify-content: center; color: #b3aed0; font-size: 10pt; flex: none; }
+  .loop-note { margin-top: 9px; font-size: 7.6pt; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .loop-note i { display: inline-block; width: 26px; height: 2px; background: var(--grad); border-radius: 2px; }
+
+  /* ---------- Persona card ---------- */
+  .persona { display: grid; grid-template-columns: 52mm 1fr; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin: 12px 0 14px; break-inside: avoid; }
+  .persona .side { background: #15132b; color: #fff; padding: 16px; position: relative; overflow: hidden; }
+  .persona .side::after { content: ""; position: absolute; width: 60mm; height: 60mm; right: -28mm; bottom: -28mm; border-radius: 50%; background: radial-gradient(circle, rgba(255,90,135,.55), rgba(106,70,255,0) 70%); }
+  .avatar { width: 58px; height: 58px; border-radius: 50%; background: var(--grad); display: flex; align-items: center; justify-content: center; font-family: "Inter Display"; font-weight: 800; font-size: 18pt; color: #fff; margin-bottom: 10px; }
+  .persona .side h4 { color: #fff; font-size: 13pt; }
+  .persona .side .h { font-size: 8pt; color: #b9b5d6; margin-bottom: 10px; }
+  .persona .side .kv { font-size: 7.6pt; color: #d9d5f2; margin: 6px 0; position: relative; z-index: 1; }
+  .persona .side .kv small { display: block; font-size: 6.4pt; letter-spacing: .14em; text-transform: uppercase; color: #8f8ab3; }
+  .persona .main { padding: 14px 16px; }
+  .persona .row { padding: 6px 0; border-bottom: 1px dashed var(--line); }
+  .persona .row:last-child { border-bottom: 0; }
+  .persona .row small { display: block; font-size: 6.8pt; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); font-weight: 700; margin-bottom: 1px; }
+  .persona .row p { margin: 0; font-size: 8.7pt; }
+  .pill { display: inline-block; font-size: 7.5pt; padding: 1px 8px; border-radius: 99px; background: var(--tint); border: 1px solid var(--line); margin: 2px 3px 0 0; }
+
+  /* ---------- Stat strip ---------- */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 10px 0 14px; }
+  .stat { border-radius: 10px; padding: 11px 12px; background: var(--tint); break-inside: avoid; }
+  .stat b { display: block; font-family: "Inter Display"; font-size: 18pt; font-weight: 750; letter-spacing: -0.02em; color: var(--accent); line-height: 1.1; }
+  .stat span { font-size: 7.8pt; color: var(--muted); line-height: 1.35; display: block; margin-top: 2px; }
+
+  /* ---------- Week planner ---------- */
+  .week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin: 10px 0 14px; break-inside: avoid; }
+  .day { border: 1px solid var(--line); border-radius: 9px; padding: 8px 8px 9px; background: #fff; }
+  .day b { display: block; font-size: 7pt; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+  .day span { font-size: 7.6pt; line-height: 1.4; display: block; color: var(--body); }
+  .day.on { background: var(--ink); border-color: var(--ink); }
+  .day.on b { color: #b9a6ff; } .day.on span { color: #e6e3f7; }
+
+  /* ---------- Mock post ---------- */
+  .post { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff; break-inside: avoid; }
+  .post .hd { display: flex; align-items: center; gap: 7px; padding: 8px 10px; font-size: 8pt; font-weight: 600; color: var(--ink); }
+  .post .hd i { width: 20px; height: 20px; border-radius: 50%; background: var(--grad); display: inline-block; }
+  .post .hd em { font-style: normal; font-weight: 500; color: var(--muted); font-size: 7pt; margin-left: auto; border: 1px solid var(--line); border-radius: 99px; padding: 0 6px; }
+  .post .img { height: 30mm; background: linear-gradient(160deg, #ffd8c2 0%, #f5a6b9 45%, #8f74ff 100%); position: relative; }
+  .post .img::after { content: "4 : 5"; position: absolute; right: 8px; bottom: 6px; font-size: 7pt; color: rgba(255,255,255,.85); font-weight: 600; letter-spacing: .1em; }
+  .post .cap { padding: 8px 10px 10px; font-size: 8pt; line-height: 1.45; }
+  .post .cap b { font-weight: 650; }
+  .post .cap .tags { color: #3a6fd8; }
+
+  /* ---------- TOC ---------- */
+  .toc-part { margin: 14px 0 4px; display: flex; align-items: baseline; gap: 10px; }
+  .toc-part b { font-family: "Inter Display"; font-size: 10.5pt; color: var(--ink); }
+  .toc-part span { font-size: 7.2pt; font-weight: 700; letter-spacing: .16em; color: var(--accent); text-transform: uppercase; width: 48px; }
+  .toc a { display: flex; align-items: baseline; gap: 6px; padding: 5.5px 0; border-bottom: 1px solid var(--line); color: var(--body); font-size: 9.6pt; }
+  .toc a .n { width: 48px; flex: none; color: var(--muted); font-size: 8pt; font-weight: 600; }
+  .toc a .dots { flex: 1; }
+  .toc a .pg { font-weight: 700; color: var(--accent); font-size: 9pt; min-width: 16px; text-align: right; }
+
+  .two-col { columns: 2; column-gap: 16px; }
+  .two-col > * { break-inside: avoid; }
+  .small { font-size: 8.4pt; color: var(--muted); }
+  .center { text-align: center; }
+  hr.soft { border: 0; border-top: 1px solid var(--line); margin: 16px 0; }
+
+  /* ---------- Back cover ---------- */
+  .back { page: cover; break-before: page; width: 210mm; height: 297mm; background: #100e24; color: #fff; position: relative; overflow: hidden; }
+  .back .orb { position: absolute; width: 110mm; height: 110mm; left: 50mm; top: 55mm; border-radius: 50%;
+    background: radial-gradient(circle at 34% 30%, #ff8fb0 0%, #c056ff 32%, #6a3cf0 62%, #2c1a86 100%); }
+  .back .inner { position: absolute; left: 20mm; right: 20mm; bottom: 40mm; text-align: center; }
+  .back h2 { color: #fff; font-size: 26pt; font-weight: 800; letter-spacing: -0.02em; }
+  .back p { color: rgba(255,255,255,.7); margin: 6mm auto 0; max-width: 120mm; font-size: 10.5pt; line-height: 1.55; }
+  .back .brand { margin-top: 14mm; font-size: 12pt; }
+</style>
+</head>
+<body>
+
+<!-- ======================= COVER ======================= -->
+<section class="cover">
+  <div class="grid"></div>
+  <div class="ring r2"></div>
+  <div class="ring r1"></div>
+  <div class="glow"></div>
+  <div class="orb a"></div>
+  <div class="orb b"></div>
+  <div class="top">
+    <div class="brand">Vid<span>Ero</span></div>
+    <div class="edition">Edition 1 · October 2026</div>
+  </div>
+  <div class="main">
+    <div class="kicker">The practical playbook</div>
+    <h1>Building an<br><span class="g">AI Influencer</span></h1>
+    <div class="sub">A step-by-step guide to designing a fictional persona, keeping their face consistent across hundreds of images, producing realistic photo and video content, and growing an audience responsibly.</div>
+  </div>
+  <div class="foot">
+    <div><b>10 steps</b>From blank page to first post</div>
+    <div><b>2 routes</b>Home PC or cloud, no GPU needed</div>
+    <div><b>Checklists</b>Templates, QC and weekly routine</div>
+  </div>
+</section>
+
+<!-- ======================= CONTENTS ======================= -->
+<section class="section" id="contents">
+  <div class="eyebrow"><span class="step">Contents</span><span class="rule"></span></div>
+  <h2>What's inside</h2>
+  <p class="lead">Work through the guide in order the first time. Part 2 is the part people skip, and it's the reason most AI influencers look like a different person in every post.</p>
+
+  <div class="toc">
+    <div class="toc-part"><span>Part 1</span><b>Foundations</b></div>
+    <a href="#rules"><span class="n">00</span>Ground rules before you start<span class="dots"></span><span class="pg" data-for="rules"></span></a>
+    <a href="#overview"><span class="n">—</span>The pipeline at a glance<span class="dots"></span><span class="pg" data-for="overview"></span></a>
+    <a href="#persona"><span class="n">01</span>Design the persona<span class="dots"></span><span class="pg" data-for="persona"></span></a>
+    <a href="#tools"><span class="n">02</span>Choose your tools and set up<span class="dots"></span><span class="pg" data-for="tools"></span></a>
+
+    <div class="toc-part"><span>Part 2</span><b>Locking the identity</b></div>
+    <a href="#casting"><span class="n">03</span>Casting: find the face<span class="dots"></span><span class="pg" data-for="casting"></span></a>
+    <a href="#dataset"><span class="n">04</span>Build the reference dataset<span class="dots"></span><span class="pg" data-for="dataset"></span></a>
+    <a href="#lora"><span class="n">05</span>Train the persona LoRA<span class="dots"></span><span class="pg" data-for="lora"></span></a>
+    <a href="#consistency"><span class="n">06</span>The consistency test<span class="dots"></span><span class="pg" data-for="consistency"></span></a>
+
+    <div class="toc-part"><span>Part 3</span><b>Making content</b></div>
+    <a href="#realism"><span class="n">07</span>Prompting for realism<span class="dots"></span><span class="pg" data-for="realism"></span></a>
+    <a href="#video"><span class="n">08</span>From photo to video<span class="dots"></span><span class="pg" data-for="video"></span></a>
+    <a href="#post"><span class="n">09</span>Quality control and export<span class="dots"></span><span class="pg" data-for="post"></span></a>
+
+    <div class="toc-part"><span>Part 4</span><b>Growing the account</b></div>
+    <a href="#launch"><span class="n">10</span>Launch, post and grow<span class="dots"></span><span class="pg" data-for="launch"></span></a>
+    <a href="#money"><span class="n">—</span>Monetisation options<span class="dots"></span><span class="pg" data-for="money"></span></a>
+    <a href="#weekly"><span class="n">—</span>The weekly routine<span class="dots"></span><span class="pg" data-for="weekly"></span></a>
+
+    <div class="toc-part"><span>Extras</span><b>Reference</b></div>
+    <a href="#trouble"><span class="n">A</span>Troubleshooting<span class="dots"></span><span class="pg" data-for="trouble"></span></a>
+    <a href="#glossary"><span class="n">B</span>Glossary<span class="dots"></span><span class="pg" data-for="glossary"></span></a>
+    <a href="#checklist"><span class="n">C</span>Launch checklist<span class="dots"></span><span class="pg" data-for="checklist"></span></a>
+  </div>
+
+  <div class="callout tip" style="margin-top:18px">
+    <div class="t">How to read this guide</div>
+    <p>Each step opens with three facts: <strong>how long it takes</strong>, <strong>what you need</strong> and <strong>what you'll have at the end</strong>. If you can't produce the output, don't move on. Every later step depends on it.</p>
+  </div>
+</section>
+
+<!-- ======================= PART 1 ======================= -->
+<section class="divider">
+  <div class="bar"></div>
+  <div class="num">01</div>
+  <div class="content">
+    <div class="label">Part one</div>
+    <h2>Foundations</h2>
+    <p>The rules that keep the account alive, the shape of the whole workflow, and the one document every image will come from.</p>
+    <ul>
+      <li>Ground rules before you start <span>Step 00</span></li>
+      <li>The pipeline at a glance <span>Overview</span></li>
+      <li>Design the persona <span>Step 01</span></li>
+      <li>Choose your tools and set up <span>Step 02</span></li>
+    </ul>
+  </div>
+</section>
+
+<section class="section" id="rules">
+  <div class="eyebrow"><span class="step">Step 00</span><span class="rule"></span><span class="tag">Read first</span></div>
+  <h2>Ground rules before you start</h2>
+  <p class="lead">An AI influencer is a fictional person whose photos and videos are generated, not shot. These rules come first because breaking any of them can end the account overnight, and some can get you into legal trouble.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></div>
+      <h4>100% fictional</h4>
+      <p>No real person's face, name or photos as a base. Never prompt "looks like &lt;celebrity&gt;". Never use reference photos of people who haven't signed a release.</p>
+    </div>
+    <div class="card">
+      <div class="icon">21+</div>
+      <h4>Clearly adult</h4>
+      <p>State an age of 21 or older and keep adult styling and contexts. Never use youthful cues such as "teen", "girl", "petite" or school uniforms, not even as a joke.</p>
+    </div>
+    <div class="card">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h10M4 17h7"/><circle cx="18" cy="16" r="3"/></svg></div>
+      <h4>Label it as AI</h4>
+      <p>Turn on each platform's AI-content toggle and say "AI creator" in the bio. Most platforms now require this, and undisclosed AI personas get removed.</p>
+    </div>
+    <div class="card">
+      <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></div>
+      <h4>Keep a generation log</h4>
+      <p>Record the prompt, model, seed, date and persona for every image you keep. If someone disputes a post, the log proves it's synthetic and original.</p>
+    </div>
+  </div>
+
+  <h3>Two content tiers</h3>
+  <p>Decide now what goes where. Mainstream platforms don't allow nudity, and posting the wrong tier is the fastest way to lose an account.</p>
+  <table>
+    <tr><th style="width:22%">Tier</th><th style="width:38%">What it is</th><th>Where it can go</th></tr>
+    <tr><td>Public</td><td>Lifestyle, fashion, fitness, travel. Flirty is fine; nudity is not.</td><td>Instagram, TikTok, Threads, YouTube, Facebook, X</td></tr>
+    <tr><td>Restricted</td><td>Anything more revealing than a mainstream platform allows.</td><td>Only platforms that explicitly allow it, with age verification and their AI-creator rules followed. Never on mainstream social.</td></tr>
+  </table>
+
+  <div class="callout stop">
+    <div class="t">Hard lines</div>
+    <p>Deepfake and non-consensual imagery laws (e.g. the US TAKE IT DOWN Act, the UK Online Safety Act and the EU AI Act's transparency rules) target exactly the mistakes above. Treat them as non-negotiable. This guide isn't legal advice; check the rules where you live and on every platform you use.</p>
+  </div>
+</section>
+
+<section class="section" id="overview">
+  <div class="eyebrow"><span class="step">Overview</span><span class="rule"></span></div>
+  <h2>The pipeline at a glance</h2>
+  <p class="lead">There are two loops. You build the persona <strong>once</strong>, carefully. Then you run a cheap, fast production loop <strong>every week</strong>. Almost all quality problems come from rushing the first loop.</p>
+
+  <div class="pipe">
+    <div class="ph"><h4>Loop 1: build the persona</h4><span>Once · 1–2 weekends</span></div>
+    <div class="flow-row">
+      <div class="node"><div class="n">01</div><b>Persona</b><small>Write the bible: look, voice, niche</small></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="n">03</div><b>Casting</b><small>40 headshots, pick one face</small></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="n">04</div><b>Dataset</b><small>Same face, 25–40 varied images</small></div>
+      <div class="arrow">→</div>
+      <div class="node hl"><div class="n">05</div><b>LoRA</b><small>Train the identity lock</small></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="n">06</div><b>Test</b><small>Same person in 8 of 10?</small></div>
+    </div>
+  </div>
+
+  <div class="pipe">
+    <div class="ph"><h4>Loop 2: produce content</h4><span>Every week · 4–6 hours</span></div>
+    <div class="flow-row">
+      <div class="node"><div class="n">PLAN</div><b>Shot list</b><small>7 scenes from your pillars</small></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="n">07</div><b>Render</b><small>4 drafts per scene</small></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="n">09</div><b>QC</b><small>Reject hands, eyes, artefacts</small></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="n">08</div><b>Animate</b><small>Best stills → short clips</small></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="n">10</div><b>Post</b><small>Caption, schedule, engage</small></div>
+      <div class="arrow">→</div>
+      <div class="node hl"><div class="n">REVIEW</div><b>Measure</b><small>Copy what won</small></div>
+    </div>
+    <div class="loop-note"><i></i>Next week's shot list starts from what performed best this week.</div>
+  </div>
+
+  <h3>Why the identity lock matters</h3>
+  <p>A text prompt alone invents a slightly different face on every render. Your audience follows a <em>person</em>, so a face that drifts between posts kills trust immediately. The fix has two parts:</p>
+  <div class="grid-2">
+    <div class="card tinted"><h4>The dataset (Step 04)</h4><p>Shows the model one face in many situations: different angles, lighting, outfits and places.</p></div>
+    <div class="card tinted"><h4>The LoRA (Step 05)</h4><p>A small add-on model that learns that face and recalls it whenever you use a made-up trigger word.</p></div>
+  </div>
+
+  <h3>Time and money, roughly</h3>
+  <div class="stats">
+    <div class="stat"><b>~10 h</b><span>to build and lock the persona the first time</span></div>
+    <div class="stat"><b>4–6 h</b><span>per week to produce and post 7 pieces</span></div>
+    <div class="stat"><b>~$1–5</b><span>to rent a cloud GPU for one LoRA training run</span></div>
+    <div class="stat"><b>15×</b><span>a video costs about 15× an image, so iterate on stills</span></div>
+  </div>
+  <p class="small">Estimates for a beginner on the home-PC route. Hosted tools trade time for a monthly fee; check current pricing before you commit.</p>
+</section>
+
+<section class="section" id="persona">
+  <div class="eyebrow"><span class="step">Step 01</span><span class="rule"></span><span class="tag">Design</span></div>
+  <h2>Design the persona</h2>
+  <p class="lead">The persona bible is the single source of truth. Every image prompt and every caption is built from it. Write it once, then <strong>never change the physical description</strong>.</p>
+  <div class="meta">
+    <div><small>Time</small><b>1–2 hours</b></div>
+    <div><small>You need</small><b>A niche and a notebook</b></div>
+    <div><small>Output</small><b>A one-page persona bible</b></div>
+  </div>
+
+  <h3>Start with the niche, not the face</h3>
+  <p>People follow an account for what it gives them: outfit ideas, gym motivation, travel inspiration, a sense of humour. Pick a niche you can make 7 posts a week about for a year, then design a person who'd live in it.</p>
+
+  <h3>Example persona bible</h3>
+  <div class="persona">
+    <div class="side">
+      <div class="avatar">AL</div>
+      <h4>Ava Lane</h4>
+      <div class="h">26 · fictional · AI creator</div>
+      <div class="kv"><small>Niche</small>Everyday lifestyle, fitness and weekend travel</div>
+      <div class="kv"><small>Trigger word</small><span class="mono" style="font-size:7.6pt">avlx woman</span></div>
+      <div class="kv"><small>Voice</small>Warm, playful, a bit sarcastic</div>
+    </div>
+    <div class="main">
+      <div class="row"><small>Identity (never changes)</small><p>26-year-old woman, oval face, high cheekbones, hazel-green eyes, light freckles across the nose, long wavy chestnut-brown hair with soft curtain bangs, small beauty mark above left lip, fair warm skin, slim athletic build.</p></div>
+      <div class="row"><small>Photo style</small><p>Raw, unedited phone photo; candid; natural skin texture with visible pores; natural, uneven light; slight sensor noise.</p></div>
+      <div class="row"><small>Personality</small><p>Morning-coffee person, gym four times a week, weekend trips. Self-deprecating humour.</p></div>
+      <div class="row"><small>Wardrobe</small><p><span class="pill">oversized knits</span><span class="pill">linen sets</span><span class="pill">slip dresses</span><span class="pill">athleisure</span><span class="pill">denim</span></p></div>
+      <div class="row"><small>Recurring locations</small><p><span class="pill">sunlit apartment</span><span class="pill">café window seat</span><span class="pill">gym</span><span class="pill">beach boardwalk</span><span class="pill">rooftop at dusk</span></p></div>
+      <div class="row"><small>Content pillars</small><p><span class="pill">get ready with me</span><span class="pill">coffee &amp; mornings</span><span class="pill">gym</span><span class="pill">travel</span><span class="pill">golden hour</span></p></div>
+    </div>
+  </div>
+
+  <h3>Write a distinctive identity</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4 style="color:var(--mint)">Do</h4>
+      <ul class="v-list">
+        <li>Use concrete anchors: eye colour, exact hair colour, length and cut, build</li>
+        <li>Add one or two signature marks, like freckles or a beauty mark</li>
+        <li>Invent a rare trigger token (e.g. <code>avlx</code>) plus "woman" or "man"</li>
+        <li>Fix 3–5 recurring locations so the world feels real</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--red)">Avoid</h4>
+      <ul class="x-list">
+        <li>Vague words like "beautiful" or "stunning", which produce the generic AI face</li>
+        <li>Real names, celebrity references or "looks like…"</li>
+        <li>Changing hair colour or features later, which breaks the identity lock</li>
+        <li>Any youthful descriptor, ever</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="tools">
+  <div class="eyebrow"><span class="step">Step 02</span><span class="rule"></span><span class="tag">Setup</span></div>
+  <h2>Choose your tools and set up</h2>
+  <p class="lead">There are two ways to do this. The home-PC route is free per image and gives you full control. The cloud route needs no graphics card and gets you started in an afternoon. The steps in this guide work for both.</p>
+  <div class="meta">
+    <div><small>Time</small><b>1 hour (PC) · 15 min (cloud)</b></div>
+    <div><small>You need</small><b>A GPU with 8 GB+, or a browser</b></div>
+    <div><small>Output</small><b>A working image generator</b></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>Route A: home PC</h4>
+      <p class="small" style="margin-bottom:6px">Best value and most control once it's set up.</p>
+      <ul>
+        <li><strong>App:</strong> ComfyUI (Windows portable, NVIDIA build)</li>
+        <li><strong>Model:</strong> an SDXL photoreal checkpoint, e.g. RealVisXL V5.0 or Juggernaut XL</li>
+        <li><strong>Add-ons:</strong> ComfyUI-Manager, IPAdapter Plus, Impact Pack (FaceDetailer)</li>
+        <li><strong>Cost per image:</strong> electricity only</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Route B: cloud, no GPU</h4>
+      <p class="small" style="margin-bottom:6px">Fastest start. You pay per credit or per month.</p>
+      <ul>
+        <li><strong>Option 1:</strong> rent a GPU by the hour (RunPod, Vast.ai) and run ComfyUI there</li>
+        <li><strong>Option 2:</strong> a hosted generator with a "character" or face-reference feature</li>
+        <li><strong>Check:</strong> commercial-use rights, content policy, export without watermark</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Hardware for the home-PC route</h3>
+  <table>
+    <tr><th style="width:24%">Part</th><th style="width:26%">Minimum</th><th style="width:22%">Comfortable</th><th>Why it matters</th></tr>
+    <tr><td>GPU (NVIDIA)</td><td>8 GB VRAM (e.g. RTX 2070/3060)</td><td>12–24 GB</td><td>Sets which models fit and how fast images render</td></tr>
+    <tr><td>System RAM</td><td>16 GB + pagefile on SSD</td><td>32 GB</td><td>Model loading spikes RAM; without a pagefile, ComfyUI crashes</td></tr>
+    <tr><td>Storage</td><td>100 GB free SSD</td><td>250 GB+</td><td>Each checkpoint is 6–7 GB; renders add up quickly</td></tr>
+  </table>
+
+  <h3>Setting up ComfyUI</h3>
+  <ol class="steps">
+    <li><b>Download and extract</b>Get <em>ComfyUI Windows portable (NVIDIA)</em> from the ComfyUI GitHub releases and extract it to a short path on an SSD, e.g. <code>C:\AI\ComfyUI</code>.</li>
+    <li><b>Start it</b>Run <code>run_nvidia_gpu.bat</code>. The interface opens in your browser at <code>127.0.0.1:8188</code>. If you see out-of-memory errors, add <code>--lowvram</code> to the launch line.</li>
+    <li><b>Add a checkpoint</b>Put your SDXL model in <code>models\checkpoints\</code>. A "Lightning" variant renders in 6 steps (10–20 s per image on 8 GB); the full model is slower but has more natural skin. On 8 GB cards stick to SDXL: Flux runs, but at 1.5–3 minutes per image.</li>
+    <li><b>Install the Manager</b>If there's no <em>Manager</em> button, install ComfyUI-Manager. You'll use it to add IPAdapter in Step 04.</li>
+  </ol>
+</section>
+
+<!-- ======================= PART 2 ======================= -->
+<section class="divider">
+  <div class="bar"></div>
+  <div class="num">02</div>
+  <div class="content">
+    <div class="label">Part two</div>
+    <h2>Locking the<br>identity</h2>
+    <p>Turn a description into one recognisable face, then teach a model to reproduce it on demand. This is the part that separates a believable influencer from a stream of strangers.</p>
+    <ul>
+      <li>Casting: find the face <span>Step 03</span></li>
+      <li>Build the reference dataset <span>Step 04</span></li>
+      <li>Train the persona LoRA <span>Step 05</span></li>
+      <li>The consistency test <span>Step 06</span></li>
+    </ul>
+  </div>
+</section>
+
+<section class="section" id="casting">
+  <div class="eyebrow"><span class="step">Step 03</span><span class="rule"></span><span class="tag">Identity</span></div>
+  <h2>Casting: find the face</h2>
+  <p class="lead">Generate a batch of simple headshots from the identity description alone, then choose <strong>one</strong> hero face. This is the cheapest moment to change your mind, so take your time.</p>
+  <div class="meta">
+    <div><small>Time</small><b>~30 minutes</b></div>
+    <div><small>You need</small><b>Persona bible + generator</b></div>
+    <div><small>Output</small><b>One hero headshot</b></div>
+  </div>
+
+  <ol class="steps">
+    <li><b>Render about 40 headshots</b>Use the identity plus a neutral setup: front-facing, plain background, soft even light. Change only the seed between images.</li>
+    <li><b>Shortlist five</b>Look for a face that's attractive but <em>specific</em>: something you'd recognise again. Generic "model faces" are hard to lock.</li>
+    <li><b>Pick one</b>It should be clear, front-facing, evenly lit, with clean eyes and teeth and nothing odd. Save it as your hero image (e.g. <code>hero_ava.png</code>).</li>
+    <li><b>Not happy?</b>Edit the identity text, not the seed, and render again. Every face after this point is built from the hero.</li>
+  </ol>
+
+  <div class="prompt">
+    <span class="lbl">Casting prompt</span>
+    close-up portrait photo of a 26 year old woman, oval face, high cheekbones, hazel green eyes, light freckles across the nose, long wavy chestnut brown hair with soft curtain bangs, small beauty mark above left lip, looking at camera, neutral expression, plain light grey wall, soft window light, raw unedited phone photo, natural skin texture with visible pores<br><br>
+    <span class="neg">Negative: smooth skin, beauty filter, airbrushed, heavy makeup, hdr, oversaturated, cartoon, illustration</span>
+  </div>
+
+  <div class="callout tip">
+    <div class="t">Pick with your phone</div>
+    <p>Look at the shortlist on your phone at Instagram size. That's how your audience will see the face, and odd features are easier to spot there than on a big monitor.</p>
+  </div>
+</section>
+
+<section class="section flow" id="dataset">
+  <div class="eyebrow"><span class="step">Step 04</span><span class="rule"></span><span class="tag">Identity</span></div>
+  <h2>Build the reference dataset</h2>
+  <p class="lead">Now produce the same face in many different situations. You'll use the hero image as a <em>visual</em> reference through IPAdapter, a node that steers each render toward a given face.</p>
+  <div class="meta">
+    <div><small>Time</small><b>2–3 hours</b></div>
+    <div><small>You need</small><b>Hero image + IPAdapter</b></div>
+    <div><small>Output</small><b>25–40 curated images</b></div>
+  </div>
+
+  <ol class="steps">
+    <li><b>Install IPAdapter</b>In ComfyUI-Manager, install <em>ComfyUI_IPAdapter_plus</em> and restart. Download the SDXL <em>PLUS FACE (portraits)</em> model into <code>models\ipadapter\</code> and the ViT-H CLIP vision model into <code>models\clip_vision\</code>.</li>
+    <li><b>Wire the reference</b>Load Checkpoint → IPAdapter Unified Loader → IPAdapter Advanced (with your hero image) → KSampler. Start with weight <strong>0.65</strong> and end_at <strong>0.8</strong> so the last steps can draw natural skin.</li>
+    <li><b>Render about 45 varied images</b>Vary one thing at a time: shot type, angle, lighting, outfit, location, expression.</li>
+    <li><b>Curate hard</b>Keep 25–40. Whatever you keep gets baked into the persona permanently.</li>
+  </ol>
+
+  <h3>Coverage to aim for</h3>
+  <table class="plain">
+    <tr><th style="width:26%">Category</th><th>Include</th></tr>
+    <tr><td><strong>Framing</strong></td><td>Close-up (~40%), head and shoulders, waist-up, full body (~20%)</td></tr>
+    <tr><td><strong>Angles</strong></td><td>Front, ¾ left, ¾ right, profile, slightly above, slightly below</td></tr>
+    <tr><td><strong>Light</strong></td><td>Window daylight, golden hour, overcast outdoor, warm indoor lamp, flash at night</td></tr>
+    <tr><td><strong>Context</strong></td><td>3–5 outfits and 4–6 backgrounds from the bible; a few different expressions</td></tr>
+  </table>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4 style="color:var(--mint)">Keep the image if</h4>
+      <ul class="v-list">
+        <li>It's unmistakably the same face</li>
+        <li>Eyes, teeth, hands and ears are clean</li>
+        <li>It adds something new: angle, light or setting</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--red)">Reject the image if</h4>
+      <ul class="x-list">
+        <li>It's near-identical to one you've kept</li>
+        <li>The skin looks waxy or airbrushed</li>
+        <li>There's any distortion, even a small one</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <div class="t">Fix realism now, not later</div>
+    <p>The LoRA learns whatever look the dataset has. A plastic-looking dataset gives you a plastic-looking persona forever. If images look "too AI", read Step 07 before you train.</p>
+  </div>
+</section>
+
+<section class="section" id="lora">
+  <div class="eyebrow"><span class="step">Step 05</span><span class="rule"></span><span class="tag">Identity</span></div>
+  <h2>Train the persona LoRA</h2>
+  <p class="lead">A LoRA is a small add-on file (tens of megabytes) that teaches your checkpoint one new concept: your persona's face, recalled by the trigger word. It's what makes post #300 look like post #1.</p>
+  <div class="meta">
+    <div><small>Time</small><b>1 h (cloud) · 3–5 h (8 GB PC)</b></div>
+    <div><small>You need</small><b>Curated dataset + captions</b></div>
+    <div><small>Output</small><b><span class="mono" style="font-size:8.4pt">persona_v1.safetensors</span></b></div>
+  </div>
+
+  <h3>1. Prepare captions</h3>
+  <p>Give each image a text file with the same name. Start with the trigger, then describe the <em>scene</em>, not the face. That teaches the model that only the person belongs to the trigger word, while clothes and backgrounds stay flexible.</p>
+  <div class="prompt">
+    <span class="lbl">Example caption · img_014.txt</span>
+    avlx woman, sitting at a café window seat holding a coffee cup, cream knit sweater, overcast daylight, waist-up, candid
+  </div>
+  <p>Use folder naming like <code>img\10_avlx woman\</code> for kohya-style trainers, where 10 is the number of repeats per epoch.</p>
+
+  <h3>2. Choose where to train</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>On your PC</h4>
+      <p>Use kohya_ss (bmaltais GUI), OneTrainer or AI-Toolkit. Possible on 8 GB with the settings below. Close everything else, and expect a few hours.</p>
+    </div>
+    <div class="card">
+      <h4>Rent a GPU <span class="pill" style="margin-left:4px">recommended</span></h4>
+      <p>On RunPod or Vast.ai, start an RTX 4090 with a kohya_ss template. Upload the dataset, train, and download the file. Usually about an hour and a few dollars.</p>
+    </div>
+  </div>
+
+  <h3>3. Settings that work for SDXL on 8 GB</h3>
+  <table>
+    <tr><th style="width:34%">Setting</th><th style="width:28%">Value</th><th>Note</th></tr>
+    <tr><td>Base model</td><td>Your SDXL checkpoint</td><td>Or base SDXL 1.0 for wider compatibility</td></tr>
+    <tr><td>Network dim / alpha</td><td>16 / 8</td><td>Enough capacity for one face</td></tr>
+    <tr><td>Resolution</td><td>1024, bucketing on</td><td>Mixed aspect ratios are fine</td></tr>
+    <tr><td>Batch size</td><td>1</td><td>Raise it on bigger GPUs</td></tr>
+    <tr><td>Optimizer · learning rate</td><td>Adafactor · 1e-4</td><td>relative_step off</td></tr>
+    <tr><td>Train text encoder</td><td>Off</td><td>UNet only saves memory</td></tr>
+    <tr><td>Mixed precision</td><td>fp16</td><td>Use bf16 on RTX 30-series and newer</td></tr>
+    <tr><td>Gradient checkpointing · cache latents</td><td>On · on (to disk)</td><td>Both are essential on 8 GB</td></tr>
+    <tr><td>Total steps</td><td>3,000–4,000</td><td>≈ images × repeats × epochs; save every 2 epochs</td></tr>
+  </table>
+
+  <div class="callout tip">
+    <div class="t">Save checkpoints along the way</div>
+    <p>Saving every couple of epochs gives you several versions to compare in Step 06. The last one isn't always the best. Over-trained LoRAs copy the dataset's outfits and backgrounds.</p>
+  </div>
+</section>
+
+<section class="section flow" id="consistency">
+  <div class="eyebrow"><span class="step">Step 06</span><span class="rule"></span><span class="tag">Identity</span></div>
+  <h2>The consistency test</h2>
+  <p class="lead">Before making a single post, prove the identity holds. Render the same 10 very different scenes with fixed seeds, and check whether they show the same person.</p>
+  <div class="meta">
+    <div><small>Time</small><b>20 minutes per version</b></div>
+    <div><small>You need</small><b>LoRA + 10 test prompts</b></div>
+    <div><small>Output</small><b>A pass, or a clear fix</b></div>
+  </div>
+
+  <p>Use scenes the dataset <em>didn't</em> contain: a night market, a ski slope, a library, a kitchen, a car interior. Fixed seeds mean you can compare LoRA versions or strengths fairly, because only the LoRA changes.</p>
+
+  <table>
+    <tr><th style="width:38%">Result</th><th>What to do</th></tr>
+    <tr><td style="color:var(--mint)">Same face in 8+ of 10</td><td><strong>Pass.</strong> Lock this LoRA version and strength in the persona bible.</td></tr>
+    <tr><td>Face drifts between scenes</td><td>Raise LoRA strength toward 1.0, or retrain with more close-ups.</td></tr>
+    <tr><td>Every image looks like a dataset photo</td><td>Lower strength to ~0.7, use an earlier epoch, or retrain with more variety.</td></tr>
+    <tr><td>Looks right but plastic</td><td>Go to Step 07. A realism pass fixes most of this without retraining.</td></tr>
+  </table>
+</section>
+
+<!-- ======================= PART 3 ======================= -->
+<section class="divider">
+  <div class="bar"></div>
+  <div class="num">03</div>
+  <div class="content">
+    <div class="label">Part three</div>
+    <h2>Making content</h2>
+    <p>Write prompts that look like real phone photos, turn the best stills into short videos, and catch the flaws before your audience does.</p>
+    <ul>
+      <li>Prompting for realism <span>Step 07</span></li>
+      <li>From photo to video <span>Step 08</span></li>
+      <li>Quality control and export <span>Step 09</span></li>
+    </ul>
+  </div>
+</section>
+
+<section class="section" id="realism">
+  <div class="eyebrow"><span class="step">Step 07</span><span class="rule"></span><span class="tag">Content</span></div>
+  <h2>Prompting for realism</h2>
+  <p class="lead">The goal isn't a perfect photo. It's a believable one. Real influencer content is shot on phones, in real places, with imperfect light. Prompt for that.</p>
+
+  <h3>The prompt formula</h3>
+  <div class="chips">
+    <span class="chip c1">trigger</span><span class="plus">+</span>
+    <span class="chip c2">shot type</span><span class="plus">+</span>
+    <span class="chip c3">action / pose</span><span class="plus">+</span>
+    <span class="chip c4">outfit</span><span class="plus">+</span>
+    <span class="chip c5">location &amp; light</span><span class="plus">+</span>
+    <span class="chip c6">photo style</span>
+  </div>
+  <div class="prompt">
+    <span class="lbl">Example · Monday coffee post</span>
+    avlx woman, medium shot, sitting on a windowsill holding a coffee mug, oversized white shirt, messy hair, small apartment with plants, morning sunlight, raw unedited iPhone photo, candid and unposed, natural skin texture with visible pores, slight sensor noise<br><br>
+    <span class="neg">Negative: smooth skin, beauty filter, glossy skin, porcelain skin, oversaturated, hdr, bokeh, perfect symmetry, airbrushed</span>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4 style="color:var(--mint)">Words that add realism</h4>
+      <p><span class="pill">raw unedited phone photo</span><span class="pill">candid</span><span class="pill">visible pores</span><span class="pill">natural uneven lighting</span><span class="pill">slight sensor noise</span><span class="pill">real-world surroundings</span><span class="pill">fine facial hair</span></p>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--red)">Words that scream "AI"</h4>
+      <p><span class="pill">masterpiece</span><span class="pill">8k</span><span class="pill">ultra detailed</span><span class="pill">instagram aesthetic</span><span class="pill">bokeh</span><span class="pill">studio lighting</span><span class="pill">flawless skin</span></p>
+    </div>
+  </div>
+
+  <h3>Fixing the "obviously AI" look</h3>
+  <table>
+    <tr><th style="width:27%">Symptom</th><th style="width:30%">Usual cause</th><th>Fix</th></tr>
+    <tr><td>Waxy, airbrushed skin</td><td>Face reference active until the last steps</td><td>IPAdapter end_at 0.8, weight 0.6–0.65; add a hires pass without the reference</td></tr>
+    <tr><td>Mushy face in full-body shots</td><td>Face too small at base resolution</td><td>Hires pass at 1.5× (denoise 0.35–0.4), then FaceDetailer</td></tr>
+    <tr><td>Glossy "photoshoot" look</td><td>Prompt words like <em>studio</em>, <em>bokeh</em>, <em>8k</em></td><td>Swap them for phone-photo wording</td></tr>
+    <tr><td>Over-saturated, harsh contrast</td><td>CFG too high</td><td>Lightning models: CFG 1–1.5. Full models: 3.5–5</td></tr>
+    <tr><td>Face looks pasted on</td><td>Reference weight too high</td><td>Lower IPAdapter weight to 0.5–0.6</td></tr>
+    <tr><td>Everything too clean</td><td>No imperfections</td><td>Add subtle grain on export; mess up the scene a little</td></tr>
+  </table>
+
+  <div class="callout tip">
+    <div class="t">Biggest single upgrade</div>
+    <p><strong>FaceDetailer</strong> (from ComfyUI-Impact-Pack) finds the face, re-renders it at high resolution and blends it back. It's the best fix for waist-up and full-body shots. Optionally add a realism LoRA ("amateur photo", "skin detail") at 0.3–0.6 strength.</p>
+  </div>
+</section>
+
+<section class="section" id="video">
+  <div class="eyebrow"><span class="step">Step 08</span><span class="rule"></span><span class="tag">Content</span></div>
+  <h2>From photo to video</h2>
+  <p class="lead">Short vertical video is where reach lives. Video is expensive, so the rule is simple: <strong>iterate on cheap stills, and animate only the frames you've already approved.</strong></p>
+  <div class="meta">
+    <div><small>Time</small><b>~1 hour per week</b></div>
+    <div><small>You need</small><b>Approved stills + a video model</b></div>
+    <div><small>Output</small><b>5–10 s clips</b></div>
+  </div>
+
+  <h3>Always image-to-video</h3>
+  <p>Start every clip from an approved still of your persona. Text-to-video invents a new face; image-to-video keeps yours. Generate 4–8 candidate first frames per idea, pick the best one, then animate it.</p>
+
+  <div class="prompt">
+    <span class="lbl">Motion prompt · keep it to one action</span>
+    slow push-in, she glances up from her coffee and smiles at the camera, hair moves slightly in the breeze, natural handheld phone movement
+  </div>
+
+  <h3>Model options</h3>
+  <table>
+    <tr><th style="width:28%">Model</th><th style="width:36%">Strengths</th><th>Use it for</th></tr>
+    <tr><td>Kling</td><td>Strong human motion and faces</td><td>A good default for persona clips</td></tr>
+    <tr><td>Veo</td><td>The most cinematic and realistic</td><td>Hero clips. Often the strictest content filters</td></tr>
+    <tr><td>Hailuo / MiniMax, Seedance</td><td>Cheaper and faster</td><td>B-roll, loops, quick tests</td></tr>
+    <tr><td>Wan (open weights)</td><td>Runs locally with enough VRAM</td><td>Unlimited iteration if your GPU can handle it</td></tr>
+  </table>
+  <p class="small">Run a bake-off once: put the same still through each model with the same motion prompt, then standardise on the winner. Models update often, so repeat it every few months.</p>
+
+  <h3>Building longer videos</h3>
+  <ul>
+    <li>Clips come out at about 5–10 seconds. Chain them by using the <strong>last frame</strong> of clip 1 as the <strong>first frame</strong> of clip 2.</li>
+    <li>Cut 2–4 clips into a 7–20 second short, vertical 9:16 at 1080×1920.</li>
+    <li>Put a text hook in the first second; add captions and audio <em>inside each app</em> to stay on licensed music.</li>
+    <li>For a voice, pick one text-to-speech voice and never change it. Voice is part of the identity too.</li>
+  </ul>
+</section>
+
+<section class="section" id="post">
+  <div class="eyebrow"><span class="step">Step 09</span><span class="rule"></span><span class="tag">Content</span></div>
+  <h2>Quality control and export</h2>
+  <p class="lead">One bad hand in one post gets screenshotted and becomes the comment section. A two-minute check per image is the cheapest insurance you have.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>QC checklist: reject if any fail</h4>
+      <ul class="checklist">
+        <li>Hands and fingers: count them</li>
+        <li>Eyes (matching, same direction), teeth, earrings</li>
+        <li>Face matches the persona; no drift</li>
+        <li>No garbled text, signs or logos</li>
+        <li>Straight lines stay straight (doors, tiles, railings)</li>
+        <li>Video: no flicker, morphing or melting hands</li>
+        <li>Nothing that could read as underage</li>
+        <li>Right tier for the platform it's going to</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Fixing small defects</h4>
+      <p>Don't throw away a great image for one bad finger. Use <strong>inpainting</strong>: mask the problem area and regenerate only that part with the same prompt.</p>
+      <p>For a sharper final version of a winning draft, re-render it with the same seed plus a hires pass.</p>
+      <hr class="soft" style="margin:10px 0">
+      <h4>Export rules</h4>
+      <ul>
+        <li>Export as JPEG and <strong>strip all metadata</strong>. Generator PNGs contain your full prompts and workflow.</li>
+        <li>Add subtle grain to posts only, never to training images.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Platform sizes</h3>
+  <table>
+    <tr><th style="width:30%">Where</th><th style="width:22%">Size</th><th style="width:12%">Ratio</th><th>Notes</th></tr>
+    <tr><td>Instagram / Threads feed</td><td>1080 × 1350</td><td>4:5</td><td>Takes up the most screen in the feed</td></tr>
+    <tr><td>Stories, Reels, TikTok, Shorts</td><td>1080 × 1920</td><td>9:16</td><td>Keep text out of the top and bottom 15%</td></tr>
+    <tr><td>X</td><td>1200 × 1500</td><td>4:5</td><td>Flag media as sensitive where required</td></tr>
+  </table>
+</section>
+
+<!-- ======================= PART 4 ======================= -->
+<section class="divider">
+  <div class="bar"></div>
+  <div class="num">04</div>
+  <div class="content">
+    <div class="label">Part four</div>
+    <h2>Growing the<br>account</h2>
+    <p>Set up accounts that survive, warm them up, post consistently, read the numbers, and turn attention into income.</p>
+    <ul>
+      <li>Launch, post and grow <span>Step 10</span></li>
+      <li>Monetisation options <span>Income</span></li>
+      <li>The weekly routine <span>Routine</span></li>
+    </ul>
+  </div>
+</section>
+
+<section class="section" id="launch">
+  <div class="eyebrow"><span class="step">Step 10</span><span class="rule"></span><span class="tag">Growth</span></div>
+  <h2>Launch, post and grow</h2>
+  <p class="lead">New accounts are watched closely by platforms. A slow, human-looking start protects your reach for months.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>Account setup</h4>
+      <ul class="checklist">
+        <li>New email address and phone number per persona</li>
+        <li>Instagram <strong>Creator</strong> account (unlocks insights and scheduling)</li>
+        <li>Bio states the persona is an AI creator</li>
+        <li>Profile photo: your best close-up from the dataset</li>
+        <li>9–12 posts ready before you start promoting</li>
+      </ul>
+    </div>
+    <div class="post">
+      <div class="hd"><i></i>ava.lane <em>AI info</em></div>
+      <div class="img"></div>
+      <div class="cap"><b>ava.lane</b> Third coffee and it's not even 10am ☕ Be honest, how many are you on? <span class="tags">#morningroutine #slowliving #coffeetime</span></div>
+    </div>
+  </div>
+
+  <h3>Warm-up plan</h3>
+  <table>
+    <tr><th style="width:20%">When</th><th style="width:40%">Posting</th><th>Activity</th></tr>
+    <tr><td>Week 1</td><td>One post every 1–2 days</td><td>15–20 min a day engaging by hand in your niche. <strong>No links.</strong></td></tr>
+    <tr><td>Week 2</td><td>Daily posts + 3–5 stories</td><td>Keep engaging. Still no links.</td></tr>
+    <tr><td>Week 3+</td><td>Daily posts, 2–4 Reels a week</td><td>Add a link in the bio. Start collaborations.</td></tr>
+  </table>
+
+  <h3>Captions in the persona's voice</h3>
+  <ul>
+    <li><strong>Line 1:</strong> a hook, the first thing people read</li>
+    <li><strong>Line 2:</strong> a tiny story or detail that makes them feel real</li>
+    <li><strong>Line 3:</strong> a question that invites replies</li>
+    <li>3–5 niche hashtags, not 30. Reply to early comments in character.</li>
+  </ul>
+
+  <h3>What to measure</h3>
+  <div class="stats">
+    <div class="stat"><b>Saves</b><span>The strongest signal that a post is worth something</span></div>
+    <div class="stat"><b>Shares</b><span>What pushes you to non-followers</span></div>
+    <div class="stat"><b>Profile visits</b><span>Curiosity about the persona</span></div>
+    <div class="stat"><b>Follows / post</b><span>The number that actually grows the account</span></div>
+  </div>
+  <p>Each week, copy the scenes, outfits and hooks that won and drop the ones that didn't. Schedule posts with Meta Business Suite (Instagram and Facebook, free) and X's built-in scheduler.</p>
+</section>
+
+<section class="section" id="money">
+  <div class="eyebrow"><span class="step">Income</span><span class="rule"></span><span class="tag">Growth</span></div>
+  <h2>Monetisation options</h2>
+  <p class="lead">Monetise once you have consistent engagement, not just followers. A few thousand engaged followers in a clear niche are worth more than 50,000 random ones.</p>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="icon">1</div>
+      <h4>Brand partnerships</h4>
+      <p>Paid posts featuring products in your niche. Disclose them as ads (<code>#ad</code> or the paid-partnership tag), and tell the brand up front that the creator is AI.</p>
+    </div>
+    <div class="card">
+      <div class="icon">2</div>
+      <h4>Affiliate links</h4>
+      <p>A commission on products the persona "uses": outfits, gym gear, coffee kit. Works from week 3 with a link-in-bio page.</p>
+    </div>
+    <div class="card">
+      <div class="icon">3</div>
+      <h4>Digital products</h4>
+      <p>Photo presets, wallpapers, guides, prompt packs or a newsletter. You set the price and don't depend on a sponsor.</p>
+    </div>
+    <div class="card">
+      <div class="icon">4</div>
+      <h4>Subscriptions</h4>
+      <p>Exclusive content on a platform that explicitly allows AI creators. Follow its labelling and age-verification rules.</p>
+    </div>
+    <div class="card">
+      <div class="icon">5</div>
+      <h4>Platform payouts</h4>
+      <p>Creator funds and ad-revenue programmes. Small at first, but they grow with reach. Check each programme's AI policy.</p>
+    </div>
+    <div class="card">
+      <div class="icon">6</div>
+      <h4>Services</h4>
+      <p>Once it works, sell the skill: build personas or content for brands that want their own AI ambassador.</p>
+    </div>
+  </div>
+
+  <div class="callout warn">
+    <div class="t">Read the small print</div>
+    <p>Payment processors, ad networks and platforms each have their own rules on AI-generated people. Read them before you build income on one, and spread your income across at least two sources.</p>
+  </div>
+</section>
+
+<section class="section" id="weekly">
+  <div class="eyebrow"><span class="step">Routine</span><span class="rule"></span><span class="tag">Growth</span></div>
+  <h2>The weekly routine</h2>
+  <p class="lead">Consistency beats intensity. This routine fits around a job: about 4–6 hours of production a week plus 15–20 minutes of engagement a day.</p>
+
+  <div class="week">
+    <div class="day on"><b>Mon</b><span>Review last week's numbers. Write 7 scenes from your pillars.</span></div>
+    <div class="day"><b>Tue</b><span>Render 4 drafts per scene with the fast preset.</span></div>
+    <div class="day"><b>Wed</b><span>Pick winners, re-render sharp, QC, inpaint fixes.</span></div>
+    <div class="day"><b>Thu</b><span>Animate 2–4 stills. Edit Reels.</span></div>
+    <div class="day"><b>Fri</b><span>Export, write captions, schedule the week.</span></div>
+    <div class="day"><b>Sat</b><span>Stories and replies in character.</span></div>
+    <div class="day on"><b>Sun</b><span>Light engagement. Log what worked.</span></div>
+  </div>
+
+  <h3>Example shot list for one week</h3>
+  <table class="plain">
+    <tr><th style="width:12%">Day</th><th style="width:24%">Pillar</th><th>Scene prompt (added after the trigger)</th></tr>
+    <tr><td>Mon</td><td>Coffee &amp; mornings</td><td>sitting on a windowsill with a coffee mug, oversized white shirt, messy hair, morning sunlight</td></tr>
+    <tr><td>Tue</td><td>Gym</td><td>mirror selfie at the gym, sage green sports set, ponytail, slight smirk</td></tr>
+    <tr><td>Wed</td><td>Get ready with me</td><td>sitting at a vanity putting on earrings, black satin dress, warm bedroom with fairy lights</td></tr>
+    <tr><td>Thu</td><td>City</td><td>full body crossing the street, beige trench coat, sunglasses, autumn city</td></tr>
+    <tr><td>Fri</td><td>Golden hour</td><td>rooftop at golden hour, linen sundress, wind in hair, looking back over shoulder</td></tr>
+    <tr><td>Sat</td><td>Travel</td><td>walking on a beach boardwalk, open linen shirt, straw hat, bright midday sun</td></tr>
+    <tr><td>Sun</td><td>Cozy</td><td>lying on a bed reading a book, oversized knit sweater, rainy window, soft lamp light</td></tr>
+  </table>
+</section>
+
+<!-- ======================= REFERENCE ======================= -->
+<section class="section" id="trouble">
+  <div class="eyebrow"><span class="step">Appendix A</span><span class="rule"></span><span class="tag">Reference</span></div>
+  <h2>Troubleshooting</h2>
+  <p class="lead">The problems almost everyone hits in the first two weeks, and what to do about them.</p>
+  <table>
+    <tr><th style="width:34%">Problem</th><th>Fix</th></tr>
+    <tr><td>CUDA out of memory</td><td>Add <code>--lowvram</code> to the launch file. Use a Lightning checkpoint. Close other GPU apps, including games and browsers with video.</td></tr>
+    <tr><td>ComfyUI closes while loading a model</td><td>The system ran out of RAM. Enable a pagefile on an SSD, close apps, or upgrade to 32 GB.</td></tr>
+    <tr><td>Images look fried or over-sharpened</td><td>Sampler settings don't match the checkpoint. Lightning: ~6 steps, CFG 1–1.5, dpmpp_sde + karras.</td></tr>
+    <tr><td>"Checkpoint not found"</td><td>The filename in your workflow must match the file in <code>models\checkpoints</code> exactly.</td></tr>
+    <tr><td>Every persona looks like the same stock model</td><td>Make the identity more distinctive: freckles, a beauty mark, a specific haircut, an unusual eye colour.</td></tr>
+    <tr><td>Face changes between posts</td><td>You're not using the LoRA, or it's too weak. Re-run the consistency test (Step 06).</td></tr>
+    <tr><td>Outfits or backgrounds repeat in every image</td><td>The LoRA is over-trained. Use an earlier epoch or lower strength, and caption scenes more fully.</td></tr>
+    <tr><td>Video face melts mid-clip</td><td>Use a close or medium shot as the first frame, one simple action, and a shorter clip.</td></tr>
+    <tr><td>Reach dropped suddenly</td><td>Check for a missed AI label, links posted too early, or a borderline post. Remove it and slow down for a week.</td></tr>
+  </table>
+</section>
+
+<section class="section" id="glossary">
+  <div class="eyebrow"><span class="step">Appendix B</span><span class="rule"></span><span class="tag">Reference</span></div>
+  <h2>Glossary</h2>
+  <div class="two-col" style="margin-top:12px">
+    <p><strong>Checkpoint</strong>: the main image model file (e.g. an SDXL model). Everything is generated from it.</p>
+    <p><strong>LoRA</strong>: a small add-on file that teaches a checkpoint one new thing, like your persona's face.</p>
+    <p><strong>Trigger word</strong>: a made-up token (e.g. <code>avlx woman</code>) that switches the LoRA's concept on in a prompt.</p>
+    <p><strong>IPAdapter</strong>: a ComfyUI node that uses an image, such as your hero face, as a visual reference.</p>
+    <p><strong>Seed</strong>: the random number behind an image. Same seed plus same settings gives the same image.</p>
+    <p><strong>CFG</strong>: how strictly the model follows the prompt. Too high looks harsh and over-saturated.</p>
+    <p><strong>Steps · sampler</strong>: how many refinement passes the model makes, and the method it uses.</p>
+    <p><strong>Hires pass</strong>: upscale an image and redraw it lightly, which adds detail to skin and eyes.</p>
+    <p><strong>Denoise</strong>: how much a hires or inpainting pass is allowed to change (0 = nothing, 1 = everything).</p>
+    <p><strong>Inpainting</strong>: regenerating only a masked part of an image, like a hand or an eye.</p>
+    <p><strong>FaceDetailer</strong>: automatically re-renders the face at high resolution and blends it back.</p>
+    <p><strong>Image-to-video</strong>: animating an existing still, which keeps the persona's face much better than text-to-video.</p>
+    <p><strong>VRAM</strong>: your graphics card's memory. It limits which models you can run.</p>
+    <p><strong>Epoch</strong>: one full pass over the training dataset when training a LoRA.</p>
+  </div>
+</section>
+
+<section class="section" id="checklist">
+  <div class="eyebrow"><span class="step">Appendix C</span><span class="rule"></span><span class="tag">Print me</span></div>
+  <h2>Launch checklist</h2>
+  <p class="lead">Tick these off in order. If one is missing, the steps after it get harder.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>Foundations</h4>
+      <ul class="checklist">
+        <li>Niche chosen; it can carry 7 posts a week for a year</li>
+        <li>Persona bible written, with an identity that won't change</li>
+        <li>Stated age 21+; fully fictional; trigger word chosen</li>
+        <li>Generator working (home PC or cloud)</li>
+        <li>Generation log started</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Identity</h4>
+      <ul class="checklist">
+        <li>40 casting headshots rendered; hero face chosen</li>
+        <li>~45 reference images rendered with IPAdapter</li>
+        <li>25–40 curated, varied, realistic images kept</li>
+        <li>Captions written: trigger + scene</li>
+        <li>LoRA trained; consistency test passed (8+/10)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Content</h4>
+      <ul class="checklist">
+        <li>Realism prompt style saved in the bible</li>
+        <li>First week's shot list written</li>
+        <li>Every pick passed the QC checklist</li>
+        <li>Exported as JPEG with metadata stripped</li>
+        <li>Video model chosen after a bake-off</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Launch</h4>
+      <ul class="checklist">
+        <li>New email and phone; Creator account</li>
+        <li>Bio says "AI creator"; AI labels switched on</li>
+        <li>9–12 posts ready before promotion</li>
+        <li>Week 1 warm-up: no links, engage daily</li>
+        <li>Weekly review booked in the calendar</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout ok">
+    <div class="t">You're ready</div>
+    <p>If every box is ticked, you have something most AI influencer accounts don't: a face that stays the same, content that looks real, and an account set up to last. Now the work is consistency. Post, measure, repeat.</p>
+  </div>
+</section>
+
+<!-- ======================= BACK COVER ======================= -->
+<section class="back">
+  <div class="glow"></div>
+  <div class="orb"></div>
+  <div class="inner">
+    <h2>One face. Every post.</h2>
+    <p>Build the persona once, lock the identity, then let a simple weekly routine do the rest.</p>
+    <div class="brand">Vid<span>Ero</span></div>
+  </div>
+</section>
+
+</body>
+</html>
