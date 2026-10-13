@@ -170,6 +170,17 @@ Use the Jupyter terminal, with ComfyUI's environment active (`source /workspace/
 `hf` is the Hugging Face CLI installed in step 1.3; older versions call it `huggingface-cli download`.
 All files land in `/workspace/ComfyUI/models`, on the volume.
 
+**Hugging Face token (recommended).** Without one, `hf` warns *"You are sending unauthenticated
+requests to the HF Hub"*. Downloads still work, but they're slower and rate-limited. Fix it once:
+1. On huggingface.co go to **Settings → Access Tokens → Create new token**, type **Read**.
+2. RunPod → **Secrets → Create Secret**, name it `hf_token`, and paste the token.
+3. When deploying the pod: **Edit Template → Environment Variables**, set `HF_TOKEN` =
+   `{{ RUNPOD_SECRET_hf_token }}`.
+4. Check with `hf auth whoami`, which should print your username.
+
+For a one-off session you can run `export HF_TOKEN=hf_...` in the terminal instead. Avoid
+`hf auth login` here: it stores the token under `/root` on the container disk, which is wiped at every stop.
+
 ```bash
 cd $COMFY/models
 
