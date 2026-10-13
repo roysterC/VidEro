@@ -318,7 +318,22 @@ python -m pipeline.generate --persona personas/<slug>.yaml --shots shots/01-cast
 
 ### 2.3 Dataset
 1. In `workflows/faceref-quality.json`, set `"image": "hero_<slug>.png"` and confirm
-   `"ckpt_name": "RealVisXL_V5.0_fp16.safetensors"`.
+   `"ckpt_name": "RealVisXL_V5.0_fp16.safetensors"`. The workflow also uses FaceDetailer
+   (Impact Pack + Subpack), `bbox/face_yolov8m.pt` and the `4x_NMKD-Siax_200k.pth` upscaler from Part 1.
+   What it does, and why:
+
+   | Stage | Setting | Why |
+   |---|---|---|
+   | Hero → IPAdapter | `PrepImageForClipVision` crop **top** | The image encoder only sees a square. A centre crop of a portrait-shaped hero gives it the chest and outfit, which leak into every render |
+   | IPAdapter | weight **0.6**, end_at 0.8 | Enough to hold the face. Higher weights cause pasted-on faces and eye artefacts |
+   | Pass 1 | DPM++ SDE Karras, 30 steps, CFG 4 | RealVisXL V5.0's model card: "DPM++ SDE Karras (30+ steps)" |
+   | Upscale | 4x NMKD-Siax in pixel space, then ×0.375 = 1.5× | Avoids the blocky latent upscale. The card recommends 1.1–1.5× with an NMKD/UltraSharp upscaler |
+   | Pass 2 | plain model, DPM++ 2M Karras, 25 steps, denoise **0.3** | Card: hires denoise 0.1–0.3, 25+ steps. Higher values redraw the eyes and face |
+   | FaceDetailer | guide 768, max 1024, denoise 0.4 | Re-renders the face at high resolution. This is the main fix for wonky eyes in medium and full-body shots |
+   | Negative | `+ face asymmetry, eyes asymmetry, deformed eyes, deformed iris, cross-eyed, deformed mouth` | The model card's own negative terms for faces |
+
+   Don't put `perfect symmetry` in your persona's `negative`. It pushes the model toward asymmetric
+   faces and eyes, the opposite of what you want.
 2. Render:
    ```powershell
    python -m pipeline.generate --persona personas/<slug>.yaml --shots shots/02-dataset.yaml --template workflows/faceref-quality.json

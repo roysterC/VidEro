@@ -127,7 +127,7 @@ image reference through IPAdapter.
    | File | Checkpoint | Approx. time per image (2070 Super) |
    |---|---|---|
    | `workflows\faceref.json` | Lightning, 6 + 6 steps | ~40–60 s |
-   | `workflows\faceref-quality.json` | full RealVisXL V5.0, 30 + 20 steps: more natural skin | ~2–3 min |
+   | `workflows\faceref-quality.json` | full RealVisXL V5.0, model-card sampler settings, pixel-space upscale + FaceDetailer: natural skin, clean eyes. Needs Impact Pack/Subpack, `face_yolov8m.pt` and the `4x_NMKD-Siax_200k` upscaler | ~2–3 min (~30 s on an RTX 4090) |
 
    Both use IPAdapter only for the first 80% of pass 1. A second hires pass without IPAdapter
    then redraws skin detail, which keeps the face but drops the airbrushed look. See *Realism* below.

@@ -91,15 +91,21 @@ class WorkflowTests(unittest.TestCase):
     def test_repo_templates_load_and_link(self):
         for f in sorted((ROOT / "workflows").glob("*.json")):
             with self.subTest(file=f.name):
-                g = fill_template(load_template(f), positive="P", negative="N", seed=7,
+                g = fill_template(load_template(f), positive="<<POS>>", negative="<<NEG>>", seed=7,
                                   width=768, height=1344, prefix="x")
                 for node in g.values():
                     for v in node["inputs"].values():
                         if isinstance(v, list):
                             self.assertIn(v[0], g)
-                texts = [n["inputs"]["text"] for n in g.values() if n["class_type"] == "CLIPTextEncode"]
-                self.assertEqual(sorted(texts), ["N", "P"])
-                self.assertIn(7, [n["inputs"].get("seed") for n in g.values()])
+                # Templates may add text around the placeholders (e.g. a trigger word or extra negatives).
+                texts = " | ".join(n["inputs"]["text"] for n in g.values() if n["class_type"] == "CLIPTextEncode")
+                self.assertEqual(texts.count("<<POS>>"), 1)
+                self.assertEqual(texts.count("<<NEG>>"), 1)
+                self.assertNotIn("%PROMPT%", texts)
+                self.assertNotIn("%NEGATIVE%", texts)
+                seeds = [n["inputs"]["seed"] for n in g.values() if "seed" in n["inputs"]]
+                self.assertTrue(seeds)
+                self.assertEqual(set(seeds), {7})
 
     def test_fill_template(self):
         t = {
