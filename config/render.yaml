@@ -1,6 +1,8 @@
 # Render settings for pipeline.generate. Checkpoint filenames must match the files
 # in ComfyUI/models/checkpoints exactly (generate checks this before rendering).
 
+# Remote ComfyUI (e.g. a RunPod pod): don't put its URL here, this repo is public.
+# Put it in config/render.local.yaml (git-ignored) or the COMFY_URL environment variable.
 comfy_url: http://127.0.0.1:8188
 default_preset: fast
 

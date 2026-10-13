@@ -10,6 +10,9 @@ import urllib.request
 import uuid
 
 
+USER_AGENT = "VidEro-pipeline/1.0"
+
+
 class ComfyError(RuntimeError):
     pass
 
@@ -22,9 +25,11 @@ class ComfyClient:
 
     def _request(self, path: str, body: dict | None = None) -> bytes:
         data = json.dumps(body).encode() if body is not None else None
-        req = urllib.request.Request(
-            self.base_url + path, data=data, headers={"Content-Type": "application/json"} if data else {}
-        )
+        # RunPod's proxy (Cloudflare) rejects urllib's default User-Agent with 403 "error code: 1010".
+        headers = {"User-Agent": USER_AGENT}
+        if data:
+            headers["Content-Type"] = "application/json"
+        req = urllib.request.Request(self.base_url + path, data=data, headers=headers)
         try:
             with urllib.request.urlopen(req, timeout=60) as resp:
                 return resp.read()

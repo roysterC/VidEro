@@ -7,3 +7,5 @@ exports/
 __pycache__/
 *.pyc
 .venv/
+# Machine-specific overrides (pod URLs etc.)
+config/*.local.yaml

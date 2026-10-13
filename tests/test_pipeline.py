@@ -1,9 +1,12 @@
 import csv
 import io
 import json
+import os
+import re
 import tempfile
 import threading
 import unittest
+from unittest import mock
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -11,7 +14,7 @@ from urllib.parse import parse_qs, urlparse
 from PIL import Image
 
 from pipeline import dataset, export, generate
-from pipeline.config import Persona, Preset, Shot, load_persona, load_shots
+from pipeline.config import Persona, Preset, Shot, load_persona, load_render_config, load_shots
 from pipeline.prompts import GuardrailError, build_prompts, check_persona, check_prompt
 from pipeline.workflows import fill_template, load_template, sdxl_graph
 
@@ -123,6 +126,7 @@ def png_bytes(size=(832, 1216)):
 
 class FakeComfy(BaseHTTPRequestHandler):
     queued = []
+    user_agents = set()
 
     def log_message(self, *a):
         pass
@@ -136,6 +140,7 @@ class FakeComfy(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_GET(self):
+        FakeComfy.user_agents.add(self.headers.get("User-Agent", ""))
         url = urlparse(self.path)
         if url.path == "/object_info/CheckpointLoaderSimple":
             self._send({"CheckpointLoaderSimple": {"input": {"required": {
@@ -169,7 +174,35 @@ class GrainTests(unittest.TestCase):
             self.assertGreater(std, 2)
 
 
+class RenderConfigTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda: __import__("shutil").rmtree(self.tmp))
+        (self.tmp / "render.yaml").write_text((ROOT / "config/render.yaml").read_text())
+
+    @mock.patch.dict(os.environ, {}, clear=True)
+    def test_defaults_without_overrides(self):
+        cfg = load_render_config(self.tmp / "render.yaml")
+        self.assertEqual(cfg.comfy_url, "http://127.0.0.1:8188")
+
+    @mock.patch.dict(os.environ, {}, clear=True)
+    def test_local_file_overrides_url_and_merges_presets(self):
+        (self.tmp / "render.local.yaml").write_text(
+            "comfy_url: https://pod-8188.proxy.runpod.net\n"
+            "presets:\n  hq: {checkpoint: a.safetensors, steps: 30, cfg: 4.5, sampler: dpmpp_2m, scheduler: karras}\n")
+        cfg = load_render_config(self.tmp / "render.yaml")
+        self.assertEqual(cfg.comfy_url, "https://pod-8188.proxy.runpod.net")
+        self.assertIn("hq", cfg.presets)
+        self.assertIn("fast", cfg.presets)  # base presets kept
+
+    def test_env_var_wins(self):
+        (self.tmp / "render.local.yaml").write_text("comfy_url: https://from-file\n")
+        with mock.patch.dict(os.environ, {"COMFY_URL": "https://from-env"}):
+            self.assertEqual(load_render_config(self.tmp / "render.yaml").comfy_url, "https://from-env")
+
+
 class EndToEndTests(unittest.TestCase):
+    @mock.patch.dict(os.environ, {}, clear=True)  # a developer's COMFY_URL must not redirect the fake server
     def test_generate_dataset_export(self):
         server = ThreadingHTTPServer(("127.0.0.1", 0), FakeComfy)
         threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -177,8 +210,8 @@ class EndToEndTests(unittest.TestCase):
         self.addCleanup(server.shutdown)
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
-            cfg = (ROOT / "config/render.yaml").read_text().replace(
-                "http://127.0.0.1:8188", f"http://127.0.0.1:{server.server_address[1]}")
+            cfg = re.sub(r"(?m)^comfy_url:.*$", f"comfy_url: http://127.0.0.1:{server.server_address[1]}",
+                         (ROOT / "config/render.yaml").read_text())
             (tmp / "render.yaml").write_text(cfg)
             out = tmp / "output"
             rc = generate.main(["--persona", str(ROOT / "personas/ava.yaml"),
@@ -188,6 +221,9 @@ class EndToEndTests(unittest.TestCase):
             pngs = sorted((out / "ava/01-casting").glob("*.png"))
             self.assertEqual(len(pngs), 4)
             self.assertEqual(len(FakeComfy.queued), 4)
+            # RunPod's proxy blocks urllib's default "Python-urllib/x.y" User-Agent.
+            self.assertTrue(FakeComfy.user_agents)
+            self.assertFalse(any(ua.startswith("Python-urllib") for ua in FakeComfy.user_agents))
             with open(out / "ava/log.csv", newline="") as f:
                 rows = list(csv.DictReader(f))
             self.assertEqual(len(rows), 4)
