@@ -66,6 +66,20 @@ Always use **the same template and version** for this volume. The Python environ
 built against that image's Python and PyTorch.
 
 ### 1.3 Install ComfyUI on the volume (once)
+
+> **Using RunPod's official ComfyUI template ("runpod-slim")? Skip this section.** That template already
+> keeps ComfyUI and its Python environment on the volume and starts ComfyUI by itself:
+>
+> | | runpod-slim template | This section's setup (PyTorch template) |
+> |---|---|---|
+> | ComfyUI folder (`$COMFY`) | `/workspace/runpod-slim/ComfyUI` | `/workspace/ComfyUI` |
+> | Activate its environment | `source /workspace/runpod-slim/ComfyUI/.venv-cu128/bin/activate` | `source /workspace/ComfyUI/venv/bin/activate` |
+> | Start ComfyUI | automatic | `/workspace/start-comfy.sh` |
+>
+> Throughout this guide, use the paths from your column. Check yours with `echo $VIRTUAL_ENV`: the
+> environment must be under `/workspace/`, or installed packages are lost at every stop. A prompt
+> starting with `(.venv-cu128)` means the environment is already active.
+
 Open Jupyter → **Terminal** and run this once. Everything goes under `/workspace`, so it all survives
 stops and new pods.
 
@@ -166,7 +180,7 @@ container disk's Python: ComfyUI never sees it, and it's wiped at the next stop.
 because it uses the Python that runs ComfyUI.
 
 ### 1.5 Download the models
-Use the Jupyter terminal, with ComfyUI's environment active (`source /workspace/ComfyUI/venv/bin/activate`).
+Use the Jupyter terminal, with ComfyUI's environment active (see the table in 1.3).
 `hf` is the Hugging Face CLI installed in step 1.3; older versions call it `huggingface-cli download`.
 All files land in `/workspace/ComfyUI/models`, on the volume.
 
@@ -217,18 +231,19 @@ proxy errors. The hero face and renders sit on the same volume, so nothing has t
 Once, in a Jupyter terminal:
 
 ```bash
-source /workspace/ComfyUI/venv/bin/activate
+source /workspace/ComfyUI/venv/bin/activate   # runpod-slim: source /workspace/runpod-slim/ComfyUI/.venv-cu128/bin/activate
 git clone -b claude/ai-influencer-guide-pdf-cdo30r https://github.com/roysterC/VidEro /workspace/VidEro
 cd /workspace/VidEro
 pip install -r requirements.txt
 python -m unittest discover -s tests -t .
 ```
 
-Every session, after `/workspace/start-comfy.sh`:
+Every session, once ComfyUI is running (`/workspace/start-comfy.sh`; automatic on runpod-slim):
 
 ```bash
-source /workspace/ComfyUI/venv/bin/activate
-cd /workspace/VidEro
+source /workspace/ComfyUI/venv/bin/activate   # runpod-slim: source /workspace/runpod-slim/ComfyUI/.venv-cu128/bin/activate
+cd /workspace/VidEro                          # always run the scripts from here
+
 python -m pipeline.generate --persona personas/ava.yaml --shots shots/01-casting.yaml --count 1
 ```
 
@@ -636,7 +651,7 @@ available.
 
 **Start**
 1. RunPod → your pod → **Start**. Open a Jupyter terminal, run `/workspace/start-comfy.sh`, and wait until ComfyUI opens in the browser.
-2. In a Jupyter terminal: `source /workspace/ComfyUI/venv/bin/activate && cd /workspace/VidEro`.
+2. In a Jupyter terminal: activate ComfyUI's environment (table in 1.3), then `cd /workspace/VidEro`.
    (Scripts on your PC instead? If you deployed a new pod, update `config/render.local.yaml`.)
 
 **Work**
@@ -660,6 +675,7 @@ available.
 | `cannot reach ComfyUI` from the scripts | Pod still starting, or the pod ID changed. Open the proxy URL in a browser; update `comfy_url` in `config/render.local.yaml` |
 | `HTTP 403: error code: 1010` | Old `pipeline/comfy.py`. Run `git pull`; the current version sends a User-Agent RunPod accepts |
 | Nodes, packages or models gone after a stop | They were outside `/workspace`. Follow 1.2–1.3 so ComfyUI and its venv live on the volume |
+| `No module named 'pipeline'` | You're not in the repo folder. `cd /workspace/VidEro` first |
 | ComfyUI link shows "502" | ComfyUI isn't running. Run `/workspace/start-comfy.sh` and check `tail -f /workspace/comfy.log` |
 | `workflow rejected` with a missing node class | A custom node isn't installed on this pod (Part 1.4). Install it and restart ComfyUI |
 | Checkpoint or LoRA not in the dropdown | Wrong folder, or ComfyUI not restarted. Check `ls $COMFY/models/loras` |
