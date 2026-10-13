@@ -209,33 +209,56 @@ template there lists the exact files.
 
 Restart ComfyUI and check that the checkpoints appear in a *Load Checkpoint* node's dropdown.
 
-### 1.6 Point this repo at the pod (on your PC)
-Pull the latest version of the repo first (`git pull`). Older versions of `pipeline/comfy.py` are
+### 1.6 Run this repo's scripts on the pod (recommended)
+Run the scripts on the same machine as ComfyUI. They then use the default
+`http://127.0.0.1:8188`, so there's nothing to configure, no public URL involved and no
+proxy errors. The hero face and renders sit on the same volume, so nothing has to be uploaded or downloaded.
+
+Once, in a Jupyter terminal:
+
+```bash
+source /workspace/ComfyUI/venv/bin/activate
+git clone -b claude/ai-influencer-guide-pdf-cdo30r https://github.com/roysterC/VidEro /workspace/VidEro
+cd /workspace/VidEro
+pip install -r requirements.txt
+python -m unittest discover -s tests -t .
+```
+
+Every session, after `/workspace/start-comfy.sh`:
+
+```bash
+source /workspace/ComfyUI/venv/bin/activate
+cd /workspace/VidEro
+python -m pipeline.generate --persona personas/ava.yaml --shots shots/01-casting.yaml --count 1
+```
+
+The second line it prints should be `ComfyUI: http://127.0.0.1:8188  (from config/render.yaml)`.
+
+The commands in this guide work the same in this terminal (they're written with `/` paths).
+Day-to-day work happens in Jupyter's browser interface:
+- **View and pick renders:** browse `/workspace/VidEro/output/...` and double-click an image to view it.
+  Make a `picked` folder (right-click → New Folder) and drag your picks into it.
+- **Edit personas and shot lists:** double-click a `.yaml` file to open it in Jupyter's editor.
+- **Get finished posts out:** right-click a file in `exports/` → **Download**. For many files,
+  run `zip -r week.zip exports/<week>` and download the zip.
+- **Back up your own files:** `personas/` and `shots/` edits live only on the volume. Download copies now and then.
+
+#### Alternative: run the scripts on your PC
+Only if you prefer working locally. Your PC's copy must be on the
+`claude/ai-influencer-guide-pdf-cdo30r` branch, or `main` once that's merged. Older versions are
 blocked by RunPod's proxy with `HTTP 403: error code: 1010`.
 
 **Don't put the pod URL in `config/render.yaml`.** This repo is public, and anyone with the URL can
 use your pod: run jobs on your GPU, read your files, and install custom nodes, which means running
-their own code. Use a local override instead. It's git-ignored, so it's never committed.
+their own code. Create the git-ignored `config/render.local.yaml` instead. In PowerShell:
 
-Create `config/render.local.yaml` in your repo folder on your PC, containing one line:
-
-```yaml
-comfy_url: https://<POD_ID>-8188.proxy.runpod.net
-```
-
-The scripts read `config/render.yaml` first, then apply any keys from `render.local.yaml` on top.
-For a one-off, the `COMFY_URL` environment variable overrides both
-(PowerShell: `$env:COMFY_URL = "https://<POD_ID>-8188.proxy.runpod.net"`).
-
-The pod ID changes whenever you deploy a **new** pod. Stopping and starting the same pod keeps it.
-If a pod URL ever ends up somewhere public, terminate that pod and deploy a new one. The network
-volume keeps everything.
-
-Test:
 ```powershell
-python -m pipeline.generate --persona personas/ava.yaml --shots shots/01-casting.yaml --count 1
+Set-Content -Path config\render.local.yaml -Value "comfy_url: https://<POD_ID>-8188.proxy.runpod.net" -Encoding ascii
 ```
-If it prints `cannot reach ComfyUI`, open the URL in a browser first. The pod may still be starting.
+
+For a one-off, the `COMFY_URL` environment variable overrides both files. The pod ID changes
+whenever you deploy a **new** pod; stopping and starting the same pod keeps it. If a pod URL ever ends up
+somewhere public, terminate that pod and deploy a new one. The volume keeps everything.
 
 **Optional: a high-quality preset for 24 GB.** The repo's presets are tuned for an 8 GB card.
 On a 4090 you can afford the full model with a hires pass. Add this under `presets:` in
@@ -274,8 +297,9 @@ python -m pipeline.generate --persona personas/<slug>.yaml --shots shots/01-cast
 ```
 - Pick **one** hero face: front-facing, even light, clean eyes and teeth, something you'd recognise again.
 - Unhappy? Edit `identity` and re-run. Don't proceed with a face you only half like.
-- Upload the hero to the pod's `$COMFY/input/hero_<slug>.png`, either by dragging it into Jupyter's
-  file browser or into any *Load Image* node.
+- Copy the hero into ComfyUI's input folder. On the pod:
+  `cp output/<slug>/01-casting/<chosen-file>.png /workspace/ComfyUI/input/hero_<slug>.png`.
+  If you're running the scripts on your PC, upload it there through Jupyter's file browser instead.
 
 ### 2.3 Dataset
 1. In `workflows/faceref-quality.json`, set `"image": "hero_<slug>.png"` and confirm
@@ -295,13 +319,14 @@ python -m pipeline.generate --persona personas/<slug>.yaml --shots shots/01-cast
 
 ### 2.4 Train the LoRA on RunPod
 1. **Stop** the ComfyUI pod. Deploy a **kohya_ss** template pod (RTX 4090) on the **same network volume**.
-2. Upload `datasets/<slug>` to `/workspace/datasets/<slug>` (zip it, upload through Jupyter, then `unzip`).
+2. The dataset is already on the volume at `/workspace/VidEro/datasets/<slug>` if you ran the scripts on
+   the pod. Otherwise zip it on your PC, upload it through Jupyter, and `unzip` it there.
 3. In the kohya GUI (*LoRA* tab), use these settings:
 
    | Setting | Value on a 4090 |
    |---|---|
    | Pretrained model | `/workspace/.../checkpoints/RealVisXL_V5.0_fp16.safetensors` (SDXL checkbox on) |
-   | Image folder | `/workspace/datasets/<slug>/img` (holds `10_<trigger>`) |
+   | Image folder | `/workspace/VidEro/datasets/<slug>/img` (holds `10_<trigger>`) |
    | Network dim / alpha | 16 / 8 |
    | Resolution · bucketing | 1024,1024 · on |
    | Batch size | 2 |
@@ -400,7 +425,8 @@ Double-click the canvas to search for each node.
 ### 3.2 Save it as a repo template
 1. Test it once in the UI: replace `%PROMPT%` with a real prompt, run, and check the result.
 2. Put `%PROMPT%` back, so the text reads `mrlx woman, %PROMPT%`.
-3. **Workflow → Export (API)** → save as `workflows/locked-realism.json` in this repo.
+3. **Workflow → Export (API)**. Your browser downloads the file. Upload it through Jupyter to
+   `/workspace/VidEro/workflows/locked-realism.json` (or save it into `workflows/` on your PC).
 4. Render any shot list with it:
    ```powershell
    python -m pipeline.generate --persona personas/<slug>.yaml --shots shots/week-2026-10-12.yaml --template workflows/locked-realism.json --count 4
@@ -610,7 +636,8 @@ available.
 
 **Start**
 1. RunPod → your pod → **Start**. Open a Jupyter terminal, run `/workspace/start-comfy.sh`, and wait until ComfyUI opens in the browser.
-2. If you deployed a new pod, update `comfy_url` in `config/render.local.yaml`.
+2. In a Jupyter terminal: `source /workspace/ComfyUI/venv/bin/activate && cd /workspace/VidEro`.
+   (Scripts on your PC instead? If you deployed a new pod, update `config/render.local.yaml`.)
 
 **Work**
 3. Stills: render drafts with `--count 4` → pick → re-render or finish the winners → QC → export.
